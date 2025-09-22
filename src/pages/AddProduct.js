@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from 'react-query';
 import { productsAPI } from '../utils/api';
 import { toast } from 'react-toastify';
-import { ArrowLeft, Upload, X, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, Upload, X, Plus } from 'lucide-react';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -33,7 +33,6 @@ const AddProduct = () => {
   });
 
   const [newFeature, setNewFeature] = useState('');
-  const [newTag, setNewTag] = useState('');
   const [images, setImages] = useState([]);
 
   const categories = [
@@ -98,22 +97,7 @@ const AddProduct = () => {
     }));
   };
 
-  const handleAddTag = () => {
-    if (newTag.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, newTag.trim()]
-      }));
-      setNewTag('');
-    }
-  };
-
-  const handleRemoveTag = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter((_, i) => i !== index)
-    }));
-  };
+  // Tag functions removed as they are not used in the current implementation
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);

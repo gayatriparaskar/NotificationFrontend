@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from 'react-query';
 import { notificationsAPI } from '../utils/api';
-import { Bell, X, Check, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { Bell, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
   const [filter, setFilter] = useState('all');

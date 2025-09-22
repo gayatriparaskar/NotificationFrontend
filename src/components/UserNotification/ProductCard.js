@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Eye, Star, DollarSign, Package, Truck, X } from 'lucide-react';
+import { ShoppingCart, Eye, Star, Package, X } from 'lucide-react';
 
 const ProductCard = ({ product, onOrderNow }) => {
   const [showOrderForm, setShowOrderForm] = useState(false);

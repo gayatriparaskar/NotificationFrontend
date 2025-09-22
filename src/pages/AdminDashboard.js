@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { ordersAPI, usersAPI, productsAPI } from '../utils/api';
-import { Calendar, Users, DollarSign, TrendingUp, Eye, MoreVertical, Plus } from 'lucide-react';
+import { Calendar, Users, DollarSign, TrendingUp, Eye, Plus } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');

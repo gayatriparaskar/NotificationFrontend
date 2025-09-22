@@ -3,12 +3,12 @@ import { useQuery, useMutation } from 'react-query';
 import { productsAPI, ordersAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { Search, Filter, Star, DollarSign, ShoppingCart, Eye, Package, Truck } from 'lucide-react';
+import { Search, Package } from 'lucide-react';
 import ProductCard from '../components/UserNotification/ProductCard';
 import UserNotificationPanel from '../components/UserNotification/UserNotificationPanel';
 
 const CustomerProducts = () => {
-  const { user } = useAuth();
+  const { } = useAuth(); // eslint-disable-line no-empty-pattern
   const [filters, setFilters] = useState({
     search: '',
     category: '',

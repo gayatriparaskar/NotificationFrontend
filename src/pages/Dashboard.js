@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from 'react-query';
 import { productsAPI } from '../utils/api';
-import { Calendar, Clock, DollarSign, TrendingUp, Users, Star, ShoppingCart, Eye } from 'lucide-react';
+import { Calendar, TrendingUp, Users, Star, ShoppingCart, Eye } from 'lucide-react';
 
 const Dashboard = () => {
   const { user, isAdmin, loading } = useAuth();

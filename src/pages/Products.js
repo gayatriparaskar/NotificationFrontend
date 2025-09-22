@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { productsAPI } from '../utils/api';
-import { Search, Filter, Star, DollarSign, ShoppingCart, Eye } from 'lucide-react';
+import { Search, Star, ShoppingCart, Eye, DollarSign } from 'lucide-react';
 
 const Products = () => {
   const [filters, setFilters] = useState({
