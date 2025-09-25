@@ -5,7 +5,7 @@ import { productsAPI } from '../utils/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { Search, Star, ShoppingCart, Eye, DollarSign } from 'lucide-react';
+import { Search, ShoppingCart, Eye } from 'lucide-react';
 
 const Products = () => {
   const { addToCart } = useCart();

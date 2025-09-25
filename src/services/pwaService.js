@@ -262,8 +262,7 @@ class PWAService {
   playFallbackSound() {
     try {
       console.log('PWA: Playing fallback notification sound');
-      // Create a simple beep sound using HTML5 audio
-      const audio = new Audio();
+      // Create a simple beep sound using Web Audio API
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();

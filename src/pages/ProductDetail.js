@@ -5,7 +5,7 @@ import { productsAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { toast } from 'react-toastify';
-import { ArrowLeft, ShoppingCart, Heart, Share2, Star, Package, Truck, Shield } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Heart, Share2, Package } from 'lucide-react';
 
 const ProductDetail = () => {
   const { id } = useParams();
