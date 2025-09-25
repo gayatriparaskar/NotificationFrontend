@@ -7,6 +7,7 @@ const Home = () => {
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [badgeCount, setBadgeCount] = useState(0);
 
   useEffect(() => {
     // Check PWA install status
@@ -26,6 +27,24 @@ const Home = () => {
     const interval = setInterval(checkInstallStatus, 3000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Check for badge count on mobile devices
+    const checkBadgeCount = () => {
+      const mobileBadgeCount = localStorage.getItem('mobile-badge-count');
+      if (mobileBadgeCount) {
+        setBadgeCount(parseInt(mobileBadgeCount));
+      }
+    };
+
+    // Check immediately
+    checkBadgeCount();
+
+    // Check periodically
+    const badgeInterval = setInterval(checkBadgeCount, 2000);
+
+    return () => clearInterval(badgeInterval);
   }, []);
 
   const handleInstallClick = async () => {
@@ -116,6 +135,16 @@ const Home = () => {
               Find Your Perfect
               <span className="block text-primary-200">Snake Companion</span>
             </h1>
+            
+            {/* Mobile Badge Indicator */}
+            {badgeCount > 0 && (
+              <div className="mb-4 inline-flex items-center bg-red-500 text-white px-4 py-2 rounded-full text-lg font-semibold shadow-lg">
+                <span className="bg-white text-red-500 rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-2">
+                  {badgeCount}
+                </span>
+                New Notifications
+              </div>
+            )}
             <p className="text-xl md:text-2xl mb-8 text-primary-100 max-w-3xl mx-auto">
               Discover and purchase beautiful snakes from our curated collection. 
               From ball pythons to corn snakes, king snakes to boas - we've got the perfect snake for you.

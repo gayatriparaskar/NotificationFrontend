@@ -124,6 +124,9 @@ class NotificationService {
       // Initialize audio context for notification sounds
       this.initializeAudioContext();
 
+      // Restore badge count for mobile devices
+      this.restoreBadgeCount();
+
       return true;
     } catch (error) {
       console.error('Notification Service: Initialization failed:', error);
@@ -162,23 +165,37 @@ class NotificationService {
     try {
       console.log('Notification Service: Setting badge count to', count);
       
-      // Set badge using Badge API (modern browsers)
+      // Detect device type for better badge handling
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      const isAndroid = userAgent.includes('android');
+      const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+      
+      console.log('Notification Service: Device info - Mobile:', isMobile, 'Android:', isAndroid, 'iOS:', isIOS);
+      
+      // Set badge using Badge API (works on desktop and limited mobile support)
       if ('setAppBadge' in navigator) {
         if (count > 0) {
           navigator.setAppBadge(count).then(() => {
             console.log('Notification Service: Badge set successfully to', count);
           }).catch(error => {
             console.log('Notification Service: Could not set badge:', error);
+            // Fallback for mobile devices
+            this.setMobileBadgeFallback(count);
           });
         } else {
           navigator.clearAppBadge().then(() => {
             console.log('Notification Service: Badge cleared successfully');
           }).catch(error => {
             console.log('Notification Service: Could not clear badge:', error);
+            // Fallback for mobile devices
+            this.setMobileBadgeFallback(0);
           });
         }
       } else {
-        console.log('Notification Service: Badge API not supported');
+        console.log('Notification Service: Badge API not supported, using fallback');
+        // Use fallback for unsupported browsers (mainly iOS)
+        this.setMobileBadgeFallback(count);
       }
       
       // Also send to service worker for additional support
@@ -196,8 +213,80 @@ class NotificationService {
         localStorage.removeItem('badge-count');
       }
       
+      // Update document title for mobile fallback
+      this.updateDocumentTitle(count);
+      
     } catch (error) {
       console.log('Notification Service: Could not set badge count:', error);
+    }
+  }
+
+  // Mobile badge fallback (for iOS and unsupported browsers)
+  setMobileBadgeFallback(count) {
+    console.log('Notification Service: Using mobile badge fallback for count:', count);
+    
+    // Update document title with badge count
+    this.updateDocumentTitle(count);
+    
+    // Update favicon with badge (if possible)
+    this.updateFaviconBadge(count);
+    
+    // Store in localStorage for persistence
+    if (count > 0) {
+      localStorage.setItem('mobile-badge-count', count.toString());
+    } else {
+      localStorage.removeItem('mobile-badge-count');
+    }
+  }
+
+  // Update document title with badge count
+  updateDocumentTitle(count) {
+    const originalTitle = 'SnakeShop - Premium Snake Collection';
+    if (count > 0) {
+      document.title = `(${count}) ${originalTitle}`;
+    } else {
+      document.title = originalTitle;
+    }
+  }
+
+  // Update favicon with badge (experimental)
+  updateFaviconBadge(count) {
+    try {
+      if (count > 0) {
+        // Create a canvas with badge
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw red circle background
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(24, 8, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw white text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(count.toString(), 24, 8);
+        
+        // Update favicon
+        const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = canvas.toDataURL();
+        document.getElementsByTagName('head')[0].appendChild(link);
+      } else {
+        // Reset to original favicon
+        const link = document.querySelector("link[rel*='icon']");
+        if (link) {
+          link.href = '/favicon.ico';
+        }
+      }
+    } catch (error) {
+      console.log('Notification Service: Could not update favicon badge:', error);
     }
   }
 
@@ -212,7 +301,12 @@ class NotificationService {
           console.log('Notification Service: Badge cleared successfully');
         }).catch(error => {
           console.log('Notification Service: Could not clear badge:', error);
+          // Use mobile fallback
+          this.setMobileBadgeFallback(0);
         });
+      } else {
+        // Use mobile fallback for unsupported browsers
+        this.setMobileBadgeFallback(0);
       }
       
       // Also send to service worker
@@ -225,6 +319,7 @@ class NotificationService {
       
       // Clear badge count from localStorage
       localStorage.removeItem('badge-count');
+      localStorage.removeItem('mobile-badge-count');
       
     } catch (error) {
       console.log('Notification Service: Could not clear badge:', error);
@@ -396,6 +491,19 @@ class NotificationService {
     console.log('PWA: Has deferred prompt:', !!this.deferredPrompt);
     console.log('PWA: Is installed:', this.isInstalled);
     console.log('PWA: Standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
+  }
+
+  // Restore badge count on page load (for mobile fallback)
+  restoreBadgeCount() {
+    try {
+      const badgeCount = localStorage.getItem('mobile-badge-count');
+      if (badgeCount && parseInt(badgeCount) > 0) {
+        console.log('Notification Service: Restoring badge count:', badgeCount);
+        this.setMobileBadgeFallback(parseInt(badgeCount));
+      }
+    } catch (error) {
+      console.log('Notification Service: Could not restore badge count:', error);
+    }
   }
 
   // Check if PWA is already installed
