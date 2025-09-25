@@ -228,6 +228,53 @@ class NotificationService {
         this.isInstalled = false;
       }
     }
+    
+    // Additional mobile detection
+    this.detectMobileInstallation();
+  }
+
+  // Detect mobile-specific installation methods
+  detectMobileInstallation() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    if (isMobile) {
+      console.log('PWA: Mobile device detected');
+      
+      // Check for Android Chrome
+      if (userAgent.includes('chrome') && userAgent.includes('android')) {
+        console.log('PWA: Android Chrome detected - PWA should work');
+      }
+      // Check for iOS Safari
+      else if (userAgent.includes('safari') && (userAgent.includes('iphone') || userAgent.includes('ipad'))) {
+        console.log('PWA: iOS Safari detected - Limited PWA support');
+        this.handleiOSPWA();
+      }
+    }
+  }
+
+  // Handle iOS-specific PWA functionality
+  handleiOSPWA() {
+    // iOS doesn't support beforeinstallprompt event
+    // We need to detect if running in standalone mode
+    if (window.navigator.standalone === true) {
+      this.isInstalled = true;
+      console.log('PWA: iOS app is running in standalone mode');
+    } else {
+      // Check if user has previously added to home screen
+      const wasAddedToHomeScreen = localStorage.getItem('ios-added-to-homescreen');
+      if (wasAddedToHomeScreen === 'true') {
+        this.isInstalled = true;
+        console.log('PWA: iOS app was previously added to home screen');
+      }
+    }
+  }
+
+  // Mark iOS app as added to home screen
+  markiOSAsInstalled() {
+    localStorage.setItem('ios-added-to-homescreen', 'true');
+    this.isInstalled = true;
+    console.log('PWA: iOS app marked as added to home screen');
   }
 
   // Check if PWA can be installed

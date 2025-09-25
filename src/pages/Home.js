@@ -46,14 +46,39 @@ const Home = () => {
         console.log('Home: PWA installation failed:', result.message);
         // Show helpful message for different scenarios
         if (result.message.includes('not available')) {
-          // For browsers that don't support automatic installation, mark as installed after showing instructions
-          const shouldMarkAsInstalled = window.confirm('📱 PWA installation not available in this browser.\n\nTo install manually:\n1. Click the browser menu (⋮)\n2. Select "Install app" or "Add to Home Screen"\n\nClick OK if you have installed the app manually.');
+          // Detect device type for better instructions
+          const userAgent = navigator.userAgent.toLowerCase();
+          const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+          const isAndroid = userAgent.includes('android');
+          const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+          
+          let instructions = '';
+          
+          if (isMobile) {
+            if (isAndroid) {
+              instructions = '📱 Android Device Detected\n\nTo install SnakeShop app:\n1. Tap the browser menu (⋮) in Chrome\n2. Look for "Install app" or "Add to Home Screen"\n3. Tap it to install\n\nIf you don\'t see the option, try:\n- Using Chrome browser\n- Visiting the site in HTTPS\n- Clearing browser cache';
+            } else if (isIOS) {
+              instructions = '🍎 iOS Device Detected\n\nTo install SnakeShop app:\n1. Tap the Share button (⬆️) at the bottom\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right\n4. The app will appear on your home screen\n\n✨ iOS PWA Features:\n• App-like experience\n• Offline functionality\n• Push notifications\n• Full screen mode\n\nNote: iOS requires manual installation';
+            } else {
+              instructions = '📱 Mobile Device Detected\n\nTo install SnakeShop app:\n1. Look for browser menu (⋮) or Share button (⬆️)\n2. Find "Install app" or "Add to Home Screen"\n3. Follow the prompts to install';
+            }
+          } else {
+            instructions = '💻 Desktop Device Detected\n\nTo install SnakeShop app:\n1. Click the browser menu (⋮)\n2. Look for "Install app" or "Add to Home Screen"\n3. Click it to install\n\nBest browsers: Chrome, Edge, Firefox';
+          }
+          
+          const shouldMarkAsInstalled = window.confirm(`${instructions}\n\nClick OK if you have installed the app manually.`);
           
           if (shouldMarkAsInstalled) {
             setIsInstalled(true);
             setShowInstallButton(false);
             notificationService.isInstalled = true;
             localStorage.setItem('pwa-installed', 'true');
+            
+            // For iOS, also mark as added to home screen
+            if (isIOS) {
+              notificationService.markiOSAsInstalled();
+            }
+            
             alert('✅ App marked as installed! The install button will be hidden.');
           }
         } else {
@@ -149,7 +174,21 @@ const Home = () => {
                   ) : (
                     <>
                       <Download className="h-6 w-6" />
-                      <span>Install SnakeShop App</span>
+                      <span>
+                        {(() => {
+                          const userAgent = navigator.userAgent.toLowerCase();
+                          const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+                          const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+                          
+                          if (isIOS) {
+                            return 'Add SnakeShop to Home Screen (iOS)';
+                          } else if (isMobile) {
+                            return 'Install SnakeShop App (Mobile)';
+                          } else {
+                            return 'Install SnakeShop App';
+                          }
+                        })()}
+                      </span>
                     </>
                   )}
                 </button>
