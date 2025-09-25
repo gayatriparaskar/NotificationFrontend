@@ -60,8 +60,9 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   console.log('Service Worker: Push received');
   
-  const options = {
-    body: event.data ? event.data.text() : 'New notification from SnakeShop',
+  let notificationData = {
+    title: 'SnakeShop',
+    body: 'New notification from SnakeShop',
     icon: '/logo192.png',
     badge: '/logo192.png',
     vibrate: [200, 100, 200],
@@ -82,10 +83,67 @@ self.addEventListener('push', (event) => {
       }
     ]
   };
+  
+  // Parse push data if available
+  if (event.data) {
+    try {
+      const pushData = event.data.json();
+      console.log('Service Worker: Push data received:', pushData);
+      
+      if (pushData.title) notificationData.title = pushData.title;
+      if (pushData.body) notificationData.body = pushData.body;
+      if (pushData.icon) notificationData.icon = pushData.icon;
+      if (pushData.badge) notificationData.badge = pushData.badge;
+      if (pushData.data) notificationData.data = { ...notificationData.data, ...pushData.data };
+      
+      // Set badge count if provided
+      if (pushData.badgeCount) {
+        notificationData.data.badgeCount = pushData.badgeCount;
+        // Try to set badge immediately
+        if ('setAppBadge' in navigator) {
+          navigator.setAppBadge(pushData.badgeCount).catch(err => 
+            console.log('Service Worker: Could not set badge:', err)
+          );
+        }
+      }
+    } catch (error) {
+      console.log('Service Worker: Could not parse push data, using text:', error);
+      notificationData.body = event.data.text();
+    }
+  }
 
   event.waitUntil(
-    self.registration.showNotification('SnakeShop Notification', options)
+    self.registration.showNotification(notificationData.title, notificationData)
   );
+});
+
+// Handle notification click
+self.addEventListener('notificationclick', (event) => {
+  console.log('Service Worker: Notification clicked');
+  
+  event.notification.close();
+  
+  // Clear badge when notification is clicked
+  if ('clearAppBadge' in navigator) {
+    navigator.clearAppBadge().catch(err => 
+      console.log('Service Worker: Could not clear badge:', err)
+    );
+  }
+  
+  // Handle different actions
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow('/notifications')
+    );
+  } else if (event.action === 'close') {
+    // Just close the notification
+    return;
+  } else {
+    // Default action - open the app
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  }
 });
 
 // Handle badge notifications

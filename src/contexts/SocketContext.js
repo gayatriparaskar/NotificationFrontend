@@ -48,15 +48,19 @@ export const SocketProvider = ({ children }) => {
         // Show notification and play sound
         if (data.notification) {
           console.log('Showing local notification for customer');
-          notificationService.showLocalNotification(data.notification.title, {
+          
+          // Use web push notification with badge
+          const unreadCount = data.unreadCount || 1;
+          notificationService.sendPushNotificationWithBadge(data.notification.title, {
             body: data.notification.message,
             tag: data.notification._id,
+            badgeCount: unreadCount,
             data: data.notification
           });
+          
           notificationService.playNotificationSound();
           
           // Set badge count (WhatsApp-like) - Aggressive badge update for real-time
-          const unreadCount = data.unreadCount || 1;
           console.log('SocketContext: Real-time notification - Setting badge count to:', unreadCount);
           
           // Set badge count for real-time notifications

@@ -180,9 +180,17 @@ const AdminDashboard = () => {
         // Use notification service for sound and badge
         notificationService.playNotificationSound();
         
-        // Set badge count (WhatsApp-like) - Aggressive badge update for admin
+        // Use web push notification with badge for admin
         const unreadCount = event.detail.unreadCount || 1;
         console.log('AdminDashboard: Real-time notification - Setting badge count to:', unreadCount);
+        
+        // Send push notification with badge
+        notificationService.sendPushNotificationWithBadge(event.detail.notification.title, {
+          body: event.detail.notification.message,
+          tag: event.detail.notification._id,
+          badgeCount: unreadCount,
+          data: event.detail.notification
+        });
         
         // Set badge count for admin notifications
         try {

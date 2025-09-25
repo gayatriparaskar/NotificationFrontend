@@ -99,6 +99,56 @@ class NotificationService {
     }
   }
 
+  // Send push notification with badge
+  async sendPushNotificationWithBadge(title, options = {}) {
+    try {
+      console.log('Notification Service: Sending push notification with badge:', title);
+      
+      if (!this.registration) {
+        console.log('Notification Service: No service worker registration');
+        return false;
+      }
+      
+      const notificationOptions = {
+        body: options.body || 'New notification from SnakeShop',
+        icon: options.icon || '/logo192.png',
+        badge: options.badge || '/logo192.png',
+        tag: options.tag || 'snakeshop-notification',
+        requireInteraction: options.requireInteraction || false,
+        data: {
+          url: options.url || '/',
+          badgeCount: options.badgeCount || 0,
+          ...options.data
+        },
+        actions: [
+          {
+            action: 'view',
+            title: 'View',
+            icon: '/logo192.png'
+          },
+          {
+            action: 'close',
+            title: 'Close',
+            icon: '/logo192.png'
+          }
+        ]
+      };
+      
+      await this.registration.showNotification(title, notificationOptions);
+      
+      // Also set badge count
+      if (options.badgeCount) {
+        this.setBadgeCount(options.badgeCount);
+      }
+      
+      console.log('Notification Service: Push notification with badge sent successfully');
+      return true;
+    } catch (error) {
+      console.log('Notification Service: Error sending push notification with badge:', error);
+      return false;
+    }
+  }
+
   // Initialize notification features
   async initialize(userId) {
     try {
