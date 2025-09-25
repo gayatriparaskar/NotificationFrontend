@@ -44,42 +44,16 @@ const Home = () => {
         alert('🎉 App installed successfully! You can now access SnakeShop from your home screen.');
       } else {
         console.log('Home: PWA installation failed:', result.message);
-        // Show helpful message for different scenarios
+        // Show simple message for failed installation
         if (result.message.includes('not available') || result.message.includes('manual steps')) {
-          // Detect device type for better instructions
+          // For mobile devices, just show a simple message
           const userAgent = navigator.userAgent.toLowerCase();
           const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-          const isAndroid = userAgent.includes('android');
-          const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
-          
-          let instructions = '';
           
           if (isMobile) {
-            if (isAndroid) {
-              instructions = '📱 Android Device Detected\n\n✅ PWA is working! The "Create shortcut" dialog you saw is correct!\n\nTo complete installation:\n1. Tap "Add" in the "Create shortcut" dialog\n2. The app will be added to your home screen\n3. You can then open it like a native app\n\nIf you missed the dialog:\n1. Tap the browser menu (⋮)\n2. Look for "Install app" or "Add to Home Screen"\n3. Tap it to install';
-            } else if (isIOS) {
-              instructions = '🍎 iOS Device Detected\n\nTo install SnakeShop app:\n1. Tap the Share button (⬆️) at the bottom\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right\n4. The app will appear on your home screen\n\n✨ iOS PWA Features:\n• App-like experience\n• Offline functionality\n• Push notifications\n• Full screen mode\n\nNote: iOS requires manual installation';
-            } else {
-              instructions = '📱 Mobile Device Detected\n\nTo install SnakeShop app:\n1. Look for browser menu (⋮) or Share button (⬆️)\n2. Find "Install app" or "Add to Home Screen"\n3. Follow the prompts to install';
-            }
+            alert('📱 Mobile Installation\n\nPlease use your browser menu to "Add to Home Screen" or "Install App".\n\nLook for the browser menu (⋮) or Share button (⬆️).');
           } else {
-            instructions = '💻 Desktop Device Detected\n\nTo install SnakeShop app:\n1. Click the browser menu (⋮)\n2. Look for "Install app" or "Add to Home Screen"\n3. Click it to install\n\nBest browsers: Chrome, Edge, Firefox';
-          }
-          
-          const shouldMarkAsInstalled = window.confirm(`${instructions}\n\nClick OK if you have installed the app manually.`);
-          
-          if (shouldMarkAsInstalled) {
-            setIsInstalled(true);
-            setShowInstallButton(false);
-            notificationService.isInstalled = true;
-            localStorage.setItem('pwa-installed', 'true');
-            
-            // For iOS, also mark as added to home screen
-            if (isIOS) {
-              notificationService.markiOSAsInstalled();
-            }
-            
-            alert('✅ App marked as installed! The install button will be hidden.');
+            alert('💻 Desktop Installation\n\nPlease use your browser menu to "Install App" or "Add to Home Screen".');
           }
         } else {
           alert(result.message);
@@ -203,10 +177,6 @@ const Home = () => {
                 <p className="text-primary-100 text-sm mt-2 text-center">
                   Get offline access, push notifications & app-like experience
                 </p>
-                {/* Debug info */}
-                <div className="mt-2 text-xs text-primary-200 text-center">
-                  PWA Status: {JSON.stringify(notificationService.getInstallStatus())}
-                </div>
               </div>
             )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Smartphone, CheckCircle, X } from 'lucide-react';
+import { Download, Smartphone, X } from 'lucide-react';
 import notificationService from '../services/notificationService';
 
 const PWAInstallPrompt = () => {
@@ -84,27 +84,9 @@ const PWAInstallPrompt = () => {
             </div>
             
             <div className="mb-6">
-              <p className="text-gray-600 mb-4">
-                Install SnakeShop as a PWA for a better experience with:
+              <p className="text-gray-600 mb-4 text-center">
+                Install SnakeShop for offline access and push notifications
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Offline access to your orders</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Push notifications for order updates</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>App-like experience on your device</span>
-                </li>
-                <li className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <span>Faster loading and better performance</span>
-                </li>
-              </ul>
             </div>
 
             <div className="flex space-x-3">
