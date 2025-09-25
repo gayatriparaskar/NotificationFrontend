@@ -31,7 +31,6 @@ const NotificationCenter = ({ isOpen, onClose }) => {
 
   const notifications = notificationsData?.data?.data?.notifications || [];
   const unreadCount = notifications.filter(n => !n.isRead).length;
-  const unreadNotifications = notifications.filter(n => !n.isRead);
 
   // Debug logging
   console.log('NotificationCenter data:', notificationsData);

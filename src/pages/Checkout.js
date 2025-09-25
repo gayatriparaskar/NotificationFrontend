@@ -10,7 +10,7 @@ import { CreditCard, Truck, Shield, ArrowLeft } from 'lucide-react';
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { cartItems, getCartTotal, clearCart } = useCart();
+  const { cartItems, clearCart } = useCart();
   const [formData, setFormData] = useState({
     shippingAddress: {
       street: user?.address?.street || '',

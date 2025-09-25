@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { Link } from 'react-router-dom';
 import { ordersAPI, usersAPI, productsAPI, notificationsAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
-import { Calendar, Users, DollarSign, TrendingUp, Eye, Plus, Check, X, Edit, Settings, Bell, AlertCircle } from 'lucide-react';
+import { Calendar, Users, DollarSign, TrendingUp, Eye, Plus, Check, X, Settings, Bell, AlertCircle } from 'lucide-react';
 import WhatsAppBadge from '../components/WhatsAppBadge';
 
 const AdminDashboard = () => {
@@ -21,7 +21,7 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
 
   const { data: ordersData, isLoading: ordersLoading, error: ordersError, refetch: refetchOrders } = useQuery('admin-orders', () => ordersAPI.getAll({ limit: 10 }));
-  const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery('admin-users', () => usersAPI.getAll({ limit: 10 }));
+  const { data: usersData } = useQuery('admin-users', () => usersAPI.getAll({ limit: 10 }));
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery('admin-products', () => productsAPI.getAll({ limit: 10 }));
   const { data: statsData } = useQuery('admin-stats', () => usersAPI.getStats(), {
     refetchInterval: 10000, // Refetch every 10 seconds
