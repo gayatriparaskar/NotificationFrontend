@@ -1,4 +1,4 @@
-// Service Worker for SnakeShop PWA
+// Service Worker for SnakeShop - Offline functionality and push notifications
 const CACHE_NAME = 'snakeshop-v1';
 const urlsToCache = [
   '/',
@@ -39,7 +39,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event
+// Fetch event - Offline functionality
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)

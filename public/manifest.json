@@ -1,7 +1,7 @@
 {
   "short_name": "SnakeShop",
-  "name": "SnakeShop - Snake Booking Platform",
-  "description": "Book and manage snake services with real-time notifications",
+  "name": "SnakeShop - Premium Snake Collection",
+  "description": "Premium snake collection with real-time notifications",
   "icons": [
     {
       "src": "favicon.ico",
@@ -11,32 +11,30 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192",
-      "purpose": "maskable any"
+      "sizes": "192x192"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "maskable any"
+      "sizes": "512x512"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#3B82F6",
+  "theme_color": "#000000",
   "background_color": "#ffffff",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "scope": "/",
-  "categories": ["business", "productivity", "utilities"],
+  "categories": ["shopping", "business"],
   "lang": "en",
   "dir": "ltr",
   "prefer_related_applications": false,
   "shortcuts": [
     {
-      "name": "Admin Dashboard",
-      "short_name": "Dashboard",
-      "description": "Access admin dashboard",
-      "url": "/admin",
+      "name": "View Products",
+      "short_name": "Products",
+      "description": "Browse our snake collection",
+      "url": "/products",
       "icons": [
         {
           "src": "logo192.png",

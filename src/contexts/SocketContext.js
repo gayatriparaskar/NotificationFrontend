@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import pwaService from '../services/pwaService';
+import notificationService from '../services/notificationService';
 
 const SocketContext = createContext();
 
@@ -44,14 +44,15 @@ export const SocketProvider = ({ children }) => {
         console.log('Notification type:', data.notification?.type);
         console.log('Notification title:', data.notification?.title);
         
-        // Show WhatsApp-style notification
+        // Show notification and play sound
         if (data.notification) {
           console.log('Showing local notification for customer');
-          pwaService.showLocalNotification(data.notification.title, {
+          notificationService.showLocalNotification(data.notification.title, {
             body: data.notification.message,
             tag: data.notification._id,
             data: data.notification
           });
+          notificationService.playNotificationSound();
         }
         
         // Trigger a refetch of notifications

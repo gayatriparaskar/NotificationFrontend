@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { notificationsAPI } from '../utils/api';
-import WhatsAppBadge from './WhatsAppBadge';
 import { Bell, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
@@ -98,7 +97,11 @@ const NotificationCenter = ({ isOpen, onClose }) => {
             <div className="flex items-center">
               <Bell className="h-5 w-5 text-gray-600 mr-2" />
               <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-              <WhatsAppBadge count={unreadCount} className="ml-2" />
+              {unreadCount > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center font-bold animate-pulse shadow-lg px-1">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (

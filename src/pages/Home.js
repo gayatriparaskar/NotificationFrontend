@@ -1,137 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, Shield, Star, ArrowRight, Download, Smartphone, CheckCircle } from 'lucide-react';
-import pwaService from '../services/pwaService';
+import { Calendar, Clock, Users, Shield, Star, ArrowRight, Download, CheckCircle } from 'lucide-react';
+import notificationService from '../services/notificationService';
 
 const Home = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
-    // Check if app is already installed
+    // Check PWA install status
     const checkInstallStatus = () => {
-      const installed = pwaService.isAppInstalled();
-      const canInstall = pwaService.canInstall();
-      const isAndroid = pwaService.isAndroid();
+      const status = notificationService.getInstallStatus();
+      console.log('Home: PWA status:', status);
       
-      setIsInstalled(installed);
-      setShowInstallButton(canInstall && !installed);
-      
-      console.log('PWA: Install status check:', { 
-        installed, 
-        canInstall, 
-        isAndroid,
-        userAgent: navigator.userAgent 
-      });
+      // Show button only if not installed
+      setShowInstallButton(!status.isInstalled);
+      setIsInstalled(status.isInstalled);
     };
 
+    // Check immediately
     checkInstallStatus();
 
-    // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e) => {
-      console.log('PWA: Before install prompt triggered on Home page');
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallButton(true);
-    };
+    // Check periodically
+    const interval = setInterval(checkInstallStatus, 1000);
 
-    // Listen for the appinstalled event
-    const handleAppInstalled = () => {
-      console.log('PWA: App was installed from Home page');
-      setIsInstalled(true);
-      setShowInstallButton(false);
-      setDeferredPrompt(null);
-    };
-
-    // Listen for display mode changes
-    const handleDisplayModeChange = () => {
-      checkInstallStatus();
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-    window.matchMedia('(display-mode: standalone)').addEventListener('change', handleDisplayModeChange);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-      window.matchMedia('(display-mode: standalone)').removeEventListener('change', handleDisplayModeChange);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const handleInstallClick = async () => {
+    setIsInstalling(true);
     try {
-      console.log('PWA: Install button clicked');
+      console.log('Home: Starting PWA installation...');
+      const result = await notificationService.installPWA();
       
-      // Check if app is already installed
-      if (pwaService.isAppInstalled()) {
-        console.log('PWA: App is already installed');
-        alert('SnakeShop app is already installed!');
-        return;
-      }
-
-      // Try to use deferred prompt if available
-      if (deferredPrompt) {
-        console.log('PWA: Using deferred prompt');
-        try {
-          deferredPrompt.prompt();
-          
-          const { outcome } = await deferredPrompt.userChoice;
-          console.log('PWA: User choice outcome:', outcome);
-          
-          if (outcome === 'accepted') {
-            console.log('PWA: User accepted the install prompt');
-            setShowInstallButton(false);
-            setIsInstalled(true);
-          } else {
-            console.log('PWA: User dismissed the install prompt');
-          }
-        } catch (error) {
-          console.error('PWA: Deferred prompt error:', error);
-        }
-        
-        setDeferredPrompt(null);
-        return;
-      }
-
-      // If no deferred prompt, check if we can trigger install
-      console.log('PWA: No deferred prompt available');
-      
-      // Check if service worker is ready
-      if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          console.log('PWA: Service worker ready:', registration);
-          
-          // For some browsers, the install prompt should appear automatically
-          // If it doesn't, show a message
-          if (pwaService.isAndroid() && pwaService.isChrome()) {
-            alert('To install SnakeShop:\n\n1. Tap the three dots menu (⋮) in Chrome\n2. Look for "Add to Home screen"\n3. Tap "Add" to confirm');
-          } else {
-            alert('To install SnakeShop:\n\n1. Look for the install icon (⊞) in your browser\'s address bar\n2. Or use the browser menu (⋮) and select "Install SnakeShop"');
-          }
-        } catch (error) {
-          console.error('PWA: Service worker not ready:', error);
-          alert('Service worker not ready. Please refresh the page and try again.');
-        }
+      if (result.success) {
+        console.log('Home: PWA installation successful');
+        setIsInstalled(true);
+        setShowInstallButton(false);
+        // Force update the notification service status
+        notificationService.isInstalled = true;
+        // Show success message
+        alert('🎉 App installed successfully! You can now access SnakeShop from your home screen.');
       } else {
-        console.log('PWA: Service worker not supported');
-        alert('Your browser doesn\'t support PWA installation.');
+        console.log('Home: PWA installation failed:', result.message);
+        // Show helpful message for different scenarios
+        if (result.message.includes('not available')) {
+          // For browsers that don't support automatic installation, mark as installed after showing instructions
+          const shouldMarkAsInstalled = window.confirm('📱 PWA installation not available in this browser.\n\nTo install manually:\n1. Click the browser menu (⋮)\n2. Select "Install app" or "Add to Home Screen"\n\nClick OK if you have installed the app manually.');
+          
+          if (shouldMarkAsInstalled) {
+            setIsInstalled(true);
+            setShowInstallButton(false);
+            notificationService.isInstalled = true;
+            localStorage.setItem('pwa-installed', 'true');
+            alert('✅ App marked as installed! The install button will be hidden.');
+          }
+        } else {
+          alert(result.message);
+        }
       }
-      
     } catch (error) {
-      console.error('PWA: Install error:', error);
-      alert('Installation failed. Please try using your browser\'s menu to install the app.');
+      console.error('Home: Install failed:', error);
+      alert('Installation failed. Please try again.');
+    } finally {
+      setIsInstalling(false);
     }
   };
 
   const handleTestSound = () => {
-    console.log('Testing notification sound...');
-    pwaService.showLocalNotification('Test Notification', {
-      body: 'This is a test notification sound',
-      tag: 'test-notification'
-    });
+    notificationService.playNotificationSound();
   };
 
   const features = [
@@ -193,24 +131,55 @@ const Home = () => {
                 Get Started
               </Link>
               
-              {/* PWA Install Button */}
-              {showInstallButton && !isInstalled && (
+            </div>
+
+            {/* Direct Install Button */}
+            {showInstallButton && (
+              <div className="mt-6">
                 <button
                   onClick={handleInstallClick}
-                  className="btn btn-lg bg-green-600 hover:bg-green-700 text-white inline-flex items-center animate-pulse"
+                  disabled={isInstalling}
+                  className="btn btn-lg bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 inline-flex items-center justify-center space-x-3"
                 >
-                  <Download className="mr-2 h-5 w-5" />
-                  Install App
+                  {isInstalling ? (
+                    <>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                      <span>Installing App...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-6 w-6" />
+                      <span>Install SnakeShop App</span>
+                    </>
+                  )}
                 </button>
-              )}
-              
-              {isInstalled && (
-                <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg">
-                  <CheckCircle className="mr-2 h-5 w-5" />
-                  App Installed
+                <div className="flex flex-col sm:flex-row gap-3 justify-center mt-3">
+                  <button
+                    onClick={handleTestSound}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Test Notification Sound
+                  </button>
                 </div>
-              )}
-            </div>
+                <p className="text-primary-100 text-sm mt-2 text-center">
+                  Get offline access, push notifications & app-like experience
+                </p>
+                {/* Debug info */}
+                <div className="mt-2 text-xs text-primary-200 text-center">
+                  PWA Status: {JSON.stringify(notificationService.getInstallStatus())}
+                </div>
+              </div>
+            )}
+
+
+            {isInstalled && (
+              <div className="mt-8 p-4 bg-green-500 bg-opacity-20 rounded-lg border border-green-400 border-opacity-30">
+                <div className="flex items-center justify-center space-x-2 text-green-100">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">App is installed! Access it from your home screen.</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -287,69 +256,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* PWA Install Section */}
-      {!isInstalled && (
-        <section className="py-20 bg-gradient-to-r from-green-600 to-green-800 text-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                  <Smartphone className="h-8 w-8" />
-                </div>
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Install SnakeShop App
-              </h2>
-              <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
-                Get the full SnakeShop experience with our mobile app. 
-                Enjoy offline access, push notifications, and faster loading.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button
-                  onClick={handleInstallClick}
-                  className="btn btn-lg bg-white text-green-600 hover:bg-gray-100 inline-flex items-center"
-                >
-                  <Download className="mr-2 h-5 w-5" />
-                  {isInstalled ? 'App Installed ✓' : (deferredPrompt ? 'Install Now' : 'Install App')}
-                </button>
-                
-                {!showInstallButton && (
-                  <div className="text-green-200 text-center">
-                    <p className="text-sm">
-                      {pwaService.isAndroid() ? 
-                        'For Android: Tap the three dots menu (⋮) → "Add to Home screen"' :
-                        'If install button doesn\'t work, try: Chrome/Edge menu → "Install SnakeShop"'
-                      }
-                    </p>
-                    <button
-                      onClick={handleTestSound}
-                      className="mt-2 btn bg-white text-green-600 hover:bg-gray-100 text-sm"
-                    >
-                      Test Notification Sound
-                    </button>
-                  </div>
-                )}
-                
-                <div className="flex items-center space-x-6 text-green-200">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    <span>Offline Access</span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    <span>Push Notifications</span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    <span>Fast Loading</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Testimonials Section */}
       <section className="py-20 bg-white">

@@ -1,127 +1,138 @@
 import React, { useState, useEffect } from 'react';
-import { Download, X, Smartphone } from 'lucide-react';
+import { Download, Smartphone, CheckCircle, X } from 'lucide-react';
+import notificationService from '../services/notificationService';
 
 const PWAInstallPrompt = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [installStatus, setInstallStatus] = useState({
+    canInstall: false,
+    isInstalled: false,
+    hasPrompt: false
+  });
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
-    // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
-    }
-
-    // Listen for the beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e) => {
-      console.log('PWA: Before install prompt triggered');
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallPrompt(true);
+    // Check install status
+    const checkStatus = () => {
+      const status = notificationService.getInstallStatus();
+      setInstallStatus(status);
+      
+      // Show prompt if can install and not already installed
+      if (status.canInstall && !status.isInstalled) {
+        setShowPrompt(true);
+      }
     };
 
-    // Listen for the appinstalled event
-    const handleAppInstalled = () => {
-      console.log('PWA: App was installed');
-      setIsInstalled(true);
-      setShowInstallPrompt(false);
-      setDeferredPrompt(null);
-    };
+    // Check status immediately
+    checkStatus();
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    // Check status periodically
+    const interval = setInterval(checkStatus, 2000);
 
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
+    return () => clearInterval(interval);
   }, []);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-
-    console.log('PWA: Showing install prompt');
-    deferredPrompt.prompt();
-    
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log('PWA: User choice outcome:', outcome);
-    
-    if (outcome === 'accepted') {
-      console.log('PWA: User accepted the install prompt');
-    } else {
-      console.log('PWA: User dismissed the install prompt');
+  const handleInstall = async () => {
+    setIsInstalling(true);
+    try {
+      const result = await notificationService.installPWA();
+      if (result.success) {
+        setShowPrompt(false);
+        // Show success message
+        alert('App installed successfully! You can now access it from your home screen.');
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error('Install failed:', error);
+      alert('Installation failed. Please try again.');
+    } finally {
+      setIsInstalling(false);
     }
-    
-    setDeferredPrompt(null);
-    setShowInstallPrompt(false);
   };
 
   const handleDismiss = () => {
-    setShowInstallPrompt(false);
-    // Store dismissal in localStorage to avoid showing again immediately
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+    setShowPrompt(false);
   };
 
-  // Don't show if already installed or recently dismissed
-  if (isInstalled || !showInstallPrompt) {
-    return null;
-  }
-
-  // Check if user recently dismissed the prompt
-  const dismissedTime = localStorage.getItem('pwa-install-dismissed');
-  if (dismissedTime && Date.now() - parseInt(dismissedTime) < 24 * 60 * 60 * 1000) {
+  // Don't show if already installed or can't install
+  if (installStatus.isInstalled || !installStatus.canInstall) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm">
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Smartphone className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          
-          <div className="ml-3 flex-1">
-            <h3 className="text-sm font-medium text-gray-900">
-              Install SnakeShop
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              Install our app for a better experience with offline access and push notifications.
-            </p>
-            
-            <div className="mt-3 flex space-x-2">
-              <button
-                onClick={handleInstallClick}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Install
-              </button>
-              
+    <>
+      {showPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Smartphone className="h-6 w-6 text-blue-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Install SnakeShop App
+                </h3>
+              </div>
               <button
                 onClick={handleDismiss}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="text-gray-400 hover:text-gray-600"
               >
-                <X className="h-4 w-4 mr-2" />
-                Not now
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Install SnakeShop as a PWA for a better experience with:
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Offline access to your orders</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Push notifications for order updates</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>App-like experience on your device</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span>Faster loading and better performance</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={handleDismiss}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Maybe Later
+              </button>
+              <button
+                onClick={handleInstall}
+                disabled={isInstalling}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+              >
+                {isInstalling ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Installing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>Install App</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
-          
-          <div className="ml-2 flex-shrink-0">
-            <button
-              onClick={handleDismiss}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 

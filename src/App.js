@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import notificationService from './services/notificationService';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { SocketProvider } from './contexts/SocketContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
-import pwaService from './services/pwaService';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -23,12 +23,12 @@ import CustomerProducts from './pages/CustomerProducts';
 
 function App() {
   useEffect(() => {
-    // Initialize PWA service
-    pwaService.registerServiceWorker();
+    // Register service worker for offline functionality
+    notificationService.registerServiceWorker();
     
     // Handle online/offline events
-    const handleOnline = () => pwaService.handleOnline();
-    const handleOffline = () => pwaService.handleOffline();
+    const handleOnline = () => notificationService.handleOnline();
+    const handleOffline = () => notificationService.handleOffline();
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -45,6 +45,7 @@ function App() {
         <SocketProvider>
           <div className="min-h-screen bg-gray-50">
             <Navbar />
+            <PWAInstallPrompt />
             <main className="container mx-auto px-4 py-8">
           <Routes>
             {/* Public routes */}
@@ -90,8 +91,6 @@ function App() {
           </Routes>
         </main>
         
-        {/* PWA Install Prompt */}
-        <PWAInstallPrompt />
         </div>
         </SocketProvider>
       </CartProvider>

@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { ordersAPI, usersAPI, productsAPI, notificationsAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, Users, DollarSign, TrendingUp, Eye, Plus, Check, X, Settings, Bell, AlertCircle } from 'lucide-react';
-import WhatsAppBadge from '../components/WhatsAppBadge';
 
 const AdminDashboard = () => {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -315,7 +314,11 @@ const AdminDashboard = () => {
         >
           <Bell className="h-5 w-5 mr-2" />
           Notifications
-          <WhatsAppBadge count={unreadCount} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center font-bold animate-pulse shadow-lg px-1">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
       </div>
 

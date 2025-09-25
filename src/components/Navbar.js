@@ -5,7 +5,6 @@ import { useCart } from '../contexts/CartContext';
 import { useQuery, useQueryClient } from 'react-query';
 import { notificationsAPI } from '../utils/api';
 import NotificationCenter from './NotificationCenter';
-import WhatsAppBadge from './WhatsAppBadge';
 import { Menu, X, User, LogOut, Calendar, Settings, Home, Bell, ShoppingCart } from 'lucide-react';
 
 const Navbar = () => {
@@ -123,7 +122,11 @@ const Navbar = () => {
           className="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors group"
         >
           <Bell className="h-5 w-5" />
-          <WhatsAppBadge count={unreadCount} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center font-bold animate-pulse shadow-lg px-1">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
                   </>
                 )}
@@ -206,7 +209,11 @@ const Navbar = () => {
                         <Bell className="h-4 w-4 mr-2" />
                         Notifications
                         <div className="ml-auto">
-                          <WhatsAppBadge count={unreadCount} className="relative" />
+                          {unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center font-bold animate-pulse shadow-lg px-1">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
                         </div>
                       </button>
                     </>
@@ -235,7 +242,11 @@ const Navbar = () => {
                         <Bell className="h-4 w-4 mr-2" />
                         Notifications
                         <div className="ml-auto">
-                          <WhatsAppBadge count={unreadCount} className="relative" />
+                          {unreadCount > 0 && (
+                            <span className="bg-red-500 text-white text-xs rounded-full min-w-5 h-5 flex items-center justify-center font-bold animate-pulse shadow-lg px-1">
+                              {unreadCount > 99 ? '99+' : unreadCount}
+                            </span>
+                          )}
                         </div>
                       </button>
                     </>
