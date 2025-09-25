@@ -348,6 +348,8 @@ class NotificationService {
 
   // PWA Install functionality
   initializePWAInstall() {
+    console.log('PWA: Initializing PWA installation...');
+    
     // Check if app is already installed
     this.checkIfInstalled();
     
@@ -356,14 +358,44 @@ class NotificationService {
       console.log('PWA: beforeinstallprompt event fired');
       e.preventDefault();
       this.deferredPrompt = e;
+      console.log('PWA: Deferred prompt stored');
     });
 
     // Listen for appinstalled event
     window.addEventListener('appinstalled', () => {
       console.log('PWA: App was installed');
       this.isInstalled = true;
+      localStorage.setItem('pwa-installed', 'true');
       this.deferredPrompt = null;
     });
+
+    // Additional mobile detection
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    if (isMobile) {
+      console.log('PWA: Mobile device detected');
+      console.log('PWA: User Agent:', userAgent);
+      
+      // Force check for installability after a delay
+      setTimeout(() => {
+        this.checkMobileInstallability();
+      }, 3000);
+    }
+  }
+
+  // Check mobile installability
+  checkMobileInstallability() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isAndroid = userAgent.includes('android');
+    const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+    
+    console.log('PWA: Checking mobile installability...');
+    console.log('PWA: Is Android:', isAndroid);
+    console.log('PWA: Is iOS:', isIOS);
+    console.log('PWA: Has deferred prompt:', !!this.deferredPrompt);
+    console.log('PWA: Is installed:', this.isInstalled);
+    console.log('PWA: Standalone mode:', window.matchMedia('(display-mode: standalone)').matches);
   }
 
   // Check if PWA is already installed
@@ -442,10 +474,26 @@ class NotificationService {
 
   // Install PWA - Direct installation
   async installPWA() {
+    console.log('PWA: Starting installation process...');
+    
     const userAgent = navigator.userAgent.toLowerCase();
     const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isAndroid = userAgent.includes('android');
+    const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
     
-    // Try to use deferred prompt first
+    console.log('PWA: Device info - Mobile:', isMobile, 'Android:', isAndroid, 'iOS:', isIOS);
+    console.log('PWA: Has deferred prompt:', !!this.deferredPrompt);
+    console.log('PWA: Is already installed:', this.isInstalled);
+    
+    // Check if already in standalone mode
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('PWA: Already in standalone mode');
+      this.isInstalled = true;
+      localStorage.setItem('pwa-installed', 'true');
+      return { success: true, message: 'App is already installed and running!' };
+    }
+    
+    // Try to use deferred prompt first (Android Chrome)
     if (this.deferredPrompt) {
       try {
         console.log('PWA: Using deferred prompt for installation');
@@ -471,54 +519,41 @@ class NotificationService {
         }
       } catch (error) {
         console.error('PWA: Deferred prompt failed:', error);
-        // Fall through to automatic installation
+        // Fall through to manual installation
       }
     }
     
-    // For mobile devices, try to trigger automatic installation
+    // For mobile devices, provide manual installation instructions
     if (isMobile) {
-      console.log('PWA: Attempting automatic mobile installation');
+      console.log('PWA: Mobile device detected, providing manual installation instructions');
       
-      // Check if we can trigger the browser's install prompt
-      if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
-        // Already in standalone mode
-        this.isInstalled = true;
-        localStorage.setItem('pwa-installed', 'true');
-        return { success: true, message: 'App is already installed and running!' };
+      if (isAndroid) {
+        return { 
+          success: false, 
+          message: 'Android Installation:\n\n1. Tap the menu button (⋮) in your browser\n2. Look for "Add to Home screen" or "Install app"\n3. Tap "Add" or "Install"\n4. The app will be added to your home screen!',
+          isManual: true
+        };
+      } else if (isIOS) {
+        return { 
+          success: false, 
+          message: 'iOS Installation:\n\n1. Tap the Share button (⬆️) at the bottom\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right\n4. The app will be added to your home screen!',
+          isManual: true
+        };
+      } else {
+        return { 
+          success: false, 
+          message: 'Mobile Installation:\n\nPlease use your browser menu to "Add to Home Screen" or "Install app".',
+          isManual: true
+        };
       }
-      
-      // Try to trigger the browser's native install prompt
-      try {
-        // Force the browser to show the install prompt
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          // Request notification permission to trigger install prompt
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            // Try to trigger install prompt by showing a notification
-            new Notification('SnakeShop', {
-              body: 'Tap to install the app',
-              icon: '/logo192.png',
-              tag: 'install-prompt'
-            });
-            
-            // Mark as installed after showing notification
-            this.isInstalled = true;
-            localStorage.setItem('pwa-installed', 'true');
-            return { success: true, message: 'App installation initiated! Check your browser for the install prompt.' };
-          }
-        }
-      } catch (error) {
-        console.log('PWA: Could not trigger automatic installation:', error);
-      }
-      
-      // If automatic installation fails, show the system dialog
-      return { 
-        success: false, 
-        message: 'Please tap "Add to Home Screen" in the browser menu to install the app.' 
-      };
     }
     
-    return { success: false, message: 'Please use your browser menu to "Install App" or "Add to Home Screen".' };
+    // For desktop
+    return { 
+      success: false, 
+      message: 'Desktop Installation:\n\nPlease use your browser menu to "Install App" or "Add to Home Screen".',
+      isManual: true
+    };
   }
 
   // Get install status
