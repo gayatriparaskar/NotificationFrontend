@@ -59,35 +59,17 @@ export const SocketProvider = ({ children }) => {
           const unreadCount = data.unreadCount || 1;
           console.log('SocketContext: Real-time notification - Setting badge count to:', unreadCount);
           
-          // Aggressive badge update for real-time notifications
+          // Set badge count for real-time notifications
           try {
-            // Method 1: Standard badge setting
+            // Primary method: Standard badge setting
             notificationService.setBadgeCount(unreadCount);
-            console.log('SocketContext: Standard badge set');
+            console.log('SocketContext: Badge count set to:', unreadCount);
             
-            // Method 2: Mobile badge fallback
-            notificationService.setMobileBadgeFallback(unreadCount);
-            console.log('SocketContext: Mobile badge fallback set');
-            
-            // Method 3: Force mobile badge for installed PWA
-            notificationService.setMobileAppIconBadge(unreadCount);
-            console.log('SocketContext: Mobile app icon badge set');
-            
-            // Method 4: Force badge for PWA
-            notificationService.forceMobileBadge(unreadCount);
-            console.log('SocketContext: Force mobile badge set');
-            
-            // Method 5: Dispatch badge update event
+            // Dispatch badge update event for UI components
             window.dispatchEvent(new CustomEvent('badge-update', { 
               detail: { count: unreadCount } 
             }));
             console.log('SocketContext: Badge update event dispatched');
-            
-            // Method 6: Additional badge update after delay
-            setTimeout(() => {
-              notificationService.setBadgeCount(unreadCount);
-              console.log('SocketContext: Delayed badge update');
-            }, 500);
             
           } catch (error) {
             console.error('SocketContext: Error setting badge:', error);

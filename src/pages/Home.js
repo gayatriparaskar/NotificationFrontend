@@ -202,6 +202,26 @@ const Home = () => {
                 <p className="text-primary-100 text-sm mt-2 text-center">
                   Get offline access, push notifications & app-like experience
                 </p>
+                
+                {/* Mobile Badge Test Button - Only show on mobile */}
+                {/android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()) && (
+                  <div className="mt-4">
+                    <button
+                      onClick={() => {
+                        console.log('Home: Testing mobile badge...');
+                        notificationService.setBadgeCount(3);
+                        alert('Mobile badge test: Check your app icon and browser tab!');
+                        setTimeout(() => {
+                          notificationService.setBadgeCount(0);
+                          alert('Mobile badge cleared!');
+                        }, 5000);
+                      }}
+                      className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                    >
+                      Test Mobile Badge
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

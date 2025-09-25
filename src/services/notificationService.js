@@ -170,56 +170,51 @@ class NotificationService {
       const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
       const isAndroid = userAgent.includes('android');
       const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = window.navigator.standalone === true;
       
-      console.log('Notification Service: Device info - Mobile:', isMobile, 'Android:', isAndroid, 'iOS:', isIOS);
+      console.log('Notification Service: Device info - Mobile:', isMobile, 'Android:', isAndroid, 'iOS:', isIOS, 'Standalone:', isStandalone, 'iOS Standalone:', isIOSStandalone);
       
-      // For mobile devices, prioritize mobile-specific badge handling
+      // Try native Badge API first (works best on desktop and some mobile)
+      if ('setAppBadge' in navigator) {
+        console.log('Notification Service: Using native Badge API');
+        if (count > 0) {
+          navigator.setAppBadge(count).then(() => {
+            console.log('Notification Service: Native badge set successfully to', count);
+          }).catch(error => {
+            console.log('Notification Service: Native badge failed, using fallback:', error);
+            this.setMobileBadgeFallback(count);
+          });
+        } else {
+          navigator.clearAppBadge().then(() => {
+            console.log('Notification Service: Native badge cleared successfully');
+          }).catch(error => {
+            console.log('Notification Service: Native badge clear failed, using fallback:', error);
+            this.setMobileBadgeFallback(0);
+          });
+        }
+      } else {
+        console.log('Notification Service: Badge API not supported, using fallback');
+        this.setMobileBadgeFallback(count);
+      }
+      
+      // For mobile devices, also use mobile-specific methods
       if (isMobile) {
-        console.log('Notification Service: Mobile device detected, using mobile badge handling');
+        console.log('Notification Service: Mobile device detected, adding mobile badge methods');
+        
+        // Mobile badge fallback (document title, favicon, localStorage)
         this.setMobileBadgeFallback(count);
         
-        // Also try native Badge API if available (Android Chrome)
-        if ('setAppBadge' in navigator) {
-          console.log('Notification Service: Also trying native Badge API on mobile');
-          if (count > 0) {
-            navigator.setAppBadge(count).then(() => {
-              console.log('Notification Service: Mobile native badge set successfully to', count);
-            }).catch(error => {
-              console.log('Notification Service: Mobile native badge failed:', error);
-            });
-          } else {
-            navigator.clearAppBadge().then(() => {
-              console.log('Notification Service: Mobile native badge cleared successfully');
-            }).catch(error => {
-              console.log('Notification Service: Mobile native badge clear failed:', error);
-            });
-          }
-        }
+        // Mobile app icon badge (for installed PWA)
+        this.setMobileAppIconBadge(count);
+        
+        // Force mobile badge (aggressive methods for PWA)
+        this.forceMobileBadge(count);
         
         // Additional mobile badge methods
-        this.setMobileAppIconBadge(count);
-      } else {
-        // Desktop: Use native Badge API
-        if ('setAppBadge' in navigator) {
-          if (count > 0) {
-            navigator.setAppBadge(count).then(() => {
-              console.log('Notification Service: Desktop badge set successfully to', count);
-            }).catch(error => {
-              console.log('Notification Service: Could not set desktop badge:', error);
-              this.setMobileBadgeFallback(count);
-            });
-          } else {
-            navigator.clearAppBadge().then(() => {
-              console.log('Notification Service: Desktop badge cleared successfully');
-            }).catch(error => {
-              console.log('Notification Service: Could not clear desktop badge:', error);
-              this.setMobileBadgeFallback(0);
-            });
-          }
-        } else {
-          console.log('Notification Service: Badge API not supported, using fallback');
-          this.setMobileBadgeFallback(count);
-        }
+        this.handleMobileSpecificBadge(count);
+        
+        console.log('Notification Service: All mobile badge methods called');
       }
       
       // Also send to service worker for additional support

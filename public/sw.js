@@ -94,8 +94,29 @@ self.addEventListener('message', (event) => {
     const count = event.data.count || 0;
     console.log('Service Worker: Setting badge count to', count);
     
-    // Set badge count with multiple approaches for mobile
-    setBadgeWithFallback(count);
+    // Try native Badge API first
+    if ('setAppBadge' in navigator) {
+      if (count > 0) {
+        navigator.setAppBadge(count).then(() => {
+          console.log('Service Worker: Native badge set successfully to', count);
+        }).catch(error => {
+          console.log('Service Worker: Native badge failed:', error);
+          // Fallback to other methods
+          setBadgeWithFallback(count);
+        });
+      } else {
+        navigator.clearAppBadge().then(() => {
+          console.log('Service Worker: Native badge cleared successfully');
+        }).catch(error => {
+          console.log('Service Worker: Native badge clear failed:', error);
+          // Fallback to other methods
+          setBadgeWithFallback(0);
+        });
+      }
+    } else {
+      console.log('Service Worker: Badge API not supported, using fallback');
+      setBadgeWithFallback(count);
+    }
   }
 });
 
