@@ -94,26 +94,58 @@ self.addEventListener('message', (event) => {
     const count = event.data.count || 0;
     console.log('Service Worker: Setting badge count to', count);
     
-    // Set badge count (works on supported browsers)
-    if ('setAppBadge' in navigator) {
-      if (count > 0) {
-        navigator.setAppBadge(count).then(() => {
-          console.log('Service Worker: Badge set successfully to', count);
-        }).catch(error => {
-          console.log('Service Worker: Could not set badge:', error);
-        });
-      } else {
-        navigator.clearAppBadge().then(() => {
-          console.log('Service Worker: Badge cleared successfully');
-        }).catch(error => {
-          console.log('Service Worker: Could not clear badge:', error);
-        });
-      }
-    } else {
-      console.log('Service Worker: Badge API not supported');
-    }
+    // Set badge count with multiple approaches for mobile
+    setBadgeWithFallback(count);
   }
 });
+
+// Enhanced badge setting with mobile fallbacks
+async function setBadgeWithFallback(count) {
+  try {
+    // Method 1: Try native Badge API
+    if ('setAppBadge' in navigator) {
+      console.log('Service Worker: Trying native Badge API');
+      if (count > 0) {
+        await navigator.setAppBadge(count);
+        console.log('Service Worker: Native badge set successfully to', count);
+        return;
+      } else {
+        await navigator.clearAppBadge();
+        console.log('Service Worker: Native badge cleared successfully');
+        return;
+      }
+    }
+    
+    // Method 2: Try alternative badge methods for mobile
+    console.log('Service Worker: Native Badge API not available, trying alternatives');
+    
+    // For mobile devices, try to trigger badge through notifications
+    if (count > 0) {
+      // Show a silent notification to trigger badge
+      await self.registration.showNotification('SnakeShop', {
+        body: `${count} new notifications`,
+        icon: '/logo192.png',
+        badge: '/logo192.png',
+        tag: 'badge-notification',
+        silent: true,
+        requireInteraction: false,
+        data: { badgeCount: count }
+      });
+      
+      // Close the notification immediately to just trigger the badge
+      setTimeout(() => {
+        self.registration.getNotifications({ tag: 'badge-notification' }).then(notifications => {
+          notifications.forEach(notification => notification.close());
+        });
+      }, 100);
+      
+      console.log('Service Worker: Mobile badge triggered via notification');
+    }
+    
+  } catch (error) {
+    console.log('Service Worker: All badge methods failed:', error);
+  }
+}
 
 // Clear badge when notification is clicked
 self.addEventListener('notificationclick', (event) => {

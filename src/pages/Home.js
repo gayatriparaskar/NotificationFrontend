@@ -193,6 +193,33 @@ const Home = () => {
     }
   };
 
+  const handleTestAppIconBadge = () => {
+    // Test app icon badge specifically
+    console.log('Home: Testing app icon badge...');
+    
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    if (isMobile) {
+      console.log('Home: Testing app icon badge on mobile...');
+      
+      // Test multiple badge methods
+      notificationService.setBadgeCount(7);
+      notificationService.setMobileAppIconBadge(7);
+      
+      alert('App icon badge test: Check your app icon for badge! If not visible, check browser tab title.');
+      
+      // Clear after 5 seconds
+      setTimeout(() => {
+        notificationService.setBadgeCount(0);
+        notificationService.setMobileAppIconBadge(0);
+        alert('App icon badge cleared!');
+      }, 5000);
+    } else {
+      alert('This test is for mobile devices only. Please test on mobile.');
+    }
+  };
+
   const features = [
     {
       icon: <Calendar className="h-8 w-8 text-primary-600" />,
@@ -334,6 +361,12 @@ const Home = () => {
                     className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
                   >
                     Test Mobile Badge
+                  </button>
+                  <button
+                    onClick={handleTestAppIconBadge}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Test App Icon Badge
                   </button>
                 </div>
                 <p className="text-primary-100 text-sm mt-2 text-center">

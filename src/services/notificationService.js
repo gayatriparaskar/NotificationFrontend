@@ -195,6 +195,9 @@ class NotificationService {
             });
           }
         }
+        
+        // Additional mobile badge methods
+        this.setMobileAppIconBadge(count);
       } else {
         // Desktop: Use native Badge API
         if ('setAppBadge' in navigator) {
@@ -334,6 +337,60 @@ class NotificationService {
       }
     } catch (error) {
       console.log('Notification Service: iOS badge handling failed:', error);
+    }
+  }
+
+  // Set mobile app icon badge using multiple methods
+  setMobileAppIconBadge(count) {
+    try {
+      console.log('Notification Service: Setting mobile app icon badge to', count);
+      
+      // Method 1: Try to set badge through service worker
+      if (this.registration && this.registration.active) {
+        this.registration.active.postMessage({
+          type: 'SET_BADGE',
+          count: count,
+          force: true
+        });
+        console.log('Notification Service: Badge message sent to service worker');
+      }
+      
+      // Method 2: Try to trigger badge through silent notification
+      if (count > 0) {
+        this.triggerBadgeNotification(count);
+      }
+      
+      // Method 3: Update favicon with badge
+      this.updateFaviconBadge(count);
+      
+    } catch (error) {
+      console.log('Notification Service: Mobile app icon badge failed:', error);
+    }
+  }
+
+  // Trigger badge through silent notification
+  triggerBadgeNotification(count) {
+    try {
+      if (Notification.permission === 'granted') {
+        // Show a very brief notification to trigger badge
+        const notification = new Notification('SnakeShop', {
+          body: `${count} new notifications`,
+          icon: '/logo192.png',
+          badge: '/logo192.png',
+          tag: 'badge-trigger',
+          silent: true,
+          requireInteraction: false
+        });
+        
+        // Close immediately to just trigger the badge
+        setTimeout(() => {
+          notification.close();
+        }, 50);
+        
+        console.log('Notification Service: Badge notification triggered');
+      }
+    } catch (error) {
+      console.log('Notification Service: Badge notification failed:', error);
     }
   }
 
