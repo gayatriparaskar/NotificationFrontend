@@ -21,7 +21,8 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated && user) {
       // Connect to Socket.IO server
-      const newSocket = io('http://localhost:5000', {
+      const socketUrl = process.env.REACT_APP_SOCKET_URL || 'https://notificationbackend-35f6.onrender.com';
+      const newSocket = io(socketUrl, {
         transports: ['websocket', 'polling']
       });
 
