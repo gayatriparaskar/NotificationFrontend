@@ -162,7 +162,109 @@ class PWAService {
   // Check if app is installed
   isAppInstalled() {
     return window.matchMedia('(display-mode: standalone)').matches ||
-           window.navigator.standalone === true;
+           window.navigator.standalone === true ||
+           document.referrer.includes('android-app://');
+  }
+
+  // Check if install prompt is available
+  canInstall() {
+    // Basic PWA requirements
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const hasPushManager = 'PushManager' in window;
+    const notInstalled = !this.isAppInstalled();
+    const inBrowser = window.matchMedia('(display-mode: browser)').matches;
+    
+    // Check for Android Chrome
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isChrome = /Chrome/i.test(navigator.userAgent);
+    
+    // For Android Chrome, check if PWA criteria are met
+    if (isAndroid && isChrome) {
+      return hasServiceWorker && hasPushManager && notInstalled && inBrowser;
+    }
+    
+    // For other browsers, be more permissive
+    return hasServiceWorker && notInstalled;
+  }
+
+  // Get install button visibility
+  shouldShowInstallButton() {
+    return this.canInstall() && !this.isAppInstalled();
+  }
+
+  // Check if running on Android
+  isAndroid() {
+    return /Android/i.test(navigator.userAgent);
+  }
+
+  // Check if running on Chrome
+  isChrome() {
+    return /Chrome/i.test(navigator.userAgent);
+  }
+
+  // Get Android-specific install instructions
+  getAndroidInstallInstructions() {
+    if (this.isAndroid() && this.isChrome()) {
+      return {
+        title: 'Install SnakeShop on Android',
+        steps: [
+          '1. Tap the three dots menu (⋮) in Chrome',
+          '2. Look for "Add to Home screen" or "Install app"',
+          '3. Tap "Add" or "Install" to confirm',
+          '4. The app will be added to your home screen'
+        ],
+        alternative: 'Or look for the install icon (⊞) in the address bar'
+      };
+    }
+    return null;
+  }
+
+  // Try to trigger install prompt programmatically
+  async triggerInstallPrompt() {
+    try {
+      console.log('PWA: Attempting to trigger install prompt');
+      
+      // Check if we have a deferred prompt
+      if (window.deferredPrompt) {
+        console.log('PWA: Using deferred prompt');
+        window.deferredPrompt.prompt();
+        const { outcome } = await window.deferredPrompt.userChoice;
+        console.log('PWA: Install prompt outcome:', outcome);
+        return outcome === 'accepted';
+      }
+
+      // Check if service worker is ready
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        console.log('PWA: Service worker ready:', registration);
+        
+        // Check PWA criteria
+        const hasManifest = document.querySelector('link[rel="manifest"]');
+        const hasServiceWorker = !!registration;
+        const isHTTPS = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        
+        console.log('PWA: Install criteria check:', {
+          hasManifest: !!hasManifest,
+          hasServiceWorker,
+          isHTTPS,
+          isInstalled: this.isAppInstalled()
+        });
+        
+        // If all criteria are met, the browser should show install prompt
+        if (hasManifest && hasServiceWorker && isHTTPS && !this.isAppInstalled()) {
+          console.log('PWA: All criteria met, install prompt should be available');
+          return true;
+        } else {
+          console.log('PWA: Install criteria not met');
+          return false;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.log('PWA: Could not trigger install prompt:', error);
+      return false;
+    }
   }
 
   // Check if app is running in PWA mode
@@ -253,7 +355,7 @@ class PWAService {
       console.log('PWA: Notification sound played successfully');
     } catch (error) {
       console.log('PWA: Could not play notification tone:', error);
-      // Fallback to HTML5 audio
+      // Try fallback method
       this.playFallbackSound();
     }
   }
@@ -262,23 +364,28 @@ class PWAService {
   playFallbackSound() {
     try {
       console.log('PWA: Playing fallback notification sound');
-      // Create a simple beep sound using Web Audio API
+      // Create a simple beep sound using HTML5 Audio
+      const audio = new Audio();
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Create a simple beep using oscillator
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
+      // Simple beep sound
       oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
       oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
       
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
       
       oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
+      oscillator.stop(audioContext.currentTime + 0.2);
+      
+      console.log('PWA: Fallback sound played successfully');
     } catch (error) {
       console.log('PWA: Fallback sound also failed:', error);
     }

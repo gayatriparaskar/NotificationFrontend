@@ -10,10 +10,23 @@ const Home = () => {
 
   useEffect(() => {
     // Check if app is already installed
-    if (pwaService.isAppInstalled()) {
-      setIsInstalled(true);
-      return;
-    }
+    const checkInstallStatus = () => {
+      const installed = pwaService.isAppInstalled();
+      const canInstall = pwaService.canInstall();
+      const isAndroid = pwaService.isAndroid();
+      
+      setIsInstalled(installed);
+      setShowInstallButton(canInstall && !installed);
+      
+      console.log('PWA: Install status check:', { 
+        installed, 
+        canInstall, 
+        isAndroid,
+        userAgent: navigator.userAgent 
+      });
+    };
+
+    checkInstallStatus();
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e) => {
@@ -31,36 +44,86 @@ const Home = () => {
       setDeferredPrompt(null);
     };
 
+    // Listen for display mode changes
+    const handleDisplayModeChange = () => {
+      checkInstallStatus();
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', handleDisplayModeChange);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.matchMedia('(display-mode: standalone)').removeEventListener('change', handleDisplayModeChange);
     };
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) {
-      // If no deferred prompt, show manual installation instructions
-      alert('To install this app:\n\n1. Look for the "Add to Home Screen" option in your browser menu\n2. Or use the browser menu (⋮) and select "Install SnakeShop"\n3. On mobile: Tap the share button and "Add to Home Screen"');
-      return;
-    }
+    try {
+      console.log('PWA: Install button clicked');
+      
+      // Check if app is already installed
+      if (pwaService.isAppInstalled()) {
+        console.log('PWA: App is already installed');
+        alert('SnakeShop app is already installed!');
+        return;
+      }
 
-    console.log('PWA: Showing install prompt from Home page');
-    deferredPrompt.prompt();
-    
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log('PWA: User choice outcome from Home page:', outcome);
-    
-    if (outcome === 'accepted') {
-      console.log('PWA: User accepted the install prompt from Home page');
-    } else {
-      console.log('PWA: User dismissed the install prompt from Home page');
+      // Try to use deferred prompt if available
+      if (deferredPrompt) {
+        console.log('PWA: Using deferred prompt');
+        try {
+          deferredPrompt.prompt();
+          
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log('PWA: User choice outcome:', outcome);
+          
+          if (outcome === 'accepted') {
+            console.log('PWA: User accepted the install prompt');
+            setShowInstallButton(false);
+            setIsInstalled(true);
+          } else {
+            console.log('PWA: User dismissed the install prompt');
+          }
+        } catch (error) {
+          console.error('PWA: Deferred prompt error:', error);
+        }
+        
+        setDeferredPrompt(null);
+        return;
+      }
+
+      // If no deferred prompt, check if we can trigger install
+      console.log('PWA: No deferred prompt available');
+      
+      // Check if service worker is ready
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          console.log('PWA: Service worker ready:', registration);
+          
+          // For some browsers, the install prompt should appear automatically
+          // If it doesn't, show a message
+          if (pwaService.isAndroid() && pwaService.isChrome()) {
+            alert('To install SnakeShop:\n\n1. Tap the three dots menu (⋮) in Chrome\n2. Look for "Add to Home screen"\n3. Tap "Add" to confirm');
+          } else {
+            alert('To install SnakeShop:\n\n1. Look for the install icon (⊞) in your browser\'s address bar\n2. Or use the browser menu (⋮) and select "Install SnakeShop"');
+          }
+        } catch (error) {
+          console.error('PWA: Service worker not ready:', error);
+          alert('Service worker not ready. Please refresh the page and try again.');
+        }
+      } else {
+        console.log('PWA: Service worker not supported');
+        alert('Your browser doesn\'t support PWA installation.');
+      }
+      
+    } catch (error) {
+      console.error('PWA: Install error:', error);
+      alert('Installation failed. Please try using your browser\'s menu to install the app.');
     }
-    
-    setDeferredPrompt(null);
-    setShowInstallButton(false);
   };
 
   const handleTestSound = () => {
@@ -248,13 +311,17 @@ const Home = () => {
                   className="btn btn-lg bg-white text-green-600 hover:bg-gray-100 inline-flex items-center"
                 >
                   <Download className="mr-2 h-5 w-5" />
-                  {showInstallButton ? 'Install Now' : 'Install App'}
+                  {isInstalled ? 'App Installed ✓' : (deferredPrompt ? 'Install Now' : 'Install App')}
                 </button>
                 
                 {!showInstallButton && (
                   <div className="text-green-200 text-center">
-                    <p className="text-sm">If install button doesn't work, try:</p>
-                    <p className="text-xs mt-1">Chrome/Edge menu → "Install SnakeShop"</p>
+                    <p className="text-sm">
+                      {pwaService.isAndroid() ? 
+                        'For Android: Tap the three dots menu (⋮) → "Add to Home screen"' :
+                        'If install button doesn\'t work, try: Chrome/Edge menu → "Install SnakeShop"'
+                      }
+                    </p>
                     <button
                       onClick={handleTestSound}
                       className="mt-2 btn bg-white text-green-600 hover:bg-gray-100 text-sm"
