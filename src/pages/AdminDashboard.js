@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ordersAPI, usersAPI, productsAPI, notificationsAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, Users, DollarSign, TrendingUp, Eye, Plus, Check, X, Settings, Bell, AlertCircle } from 'lucide-react';
+import notificationService from '../services/notificationService';
 
 const AdminDashboard = () => {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -90,12 +91,16 @@ const AdminDashboard = () => {
   const markAsReadMutation = useMutation(notificationsAPI.markAsRead, {
     onSuccess: () => {
       refetchNotifications();
+      // Clear badge when notification is read
+      notificationService.clearBadge();
     }
   });
 
   const markAllAsReadMutation = useMutation(notificationsAPI.markAllAsRead, {
     onSuccess: () => {
       refetchNotifications();
+      // Clear badge when all notifications are read
+      notificationService.clearBadge();
     }
   });
 
@@ -170,30 +175,15 @@ const AdminDashboard = () => {
     const handleNewNotification = (event) => {
       console.log('Real-time notification received in Admin Dashboard:', event.detail);
       
-      // Play notification sound
+      // Play notification sound and set badge
       if (event.detail?.notification) {
-        // Create notification sound
-        try {
-          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          const oscillator = audioContext.createOscillator();
-          const gainNode = audioContext.createGain();
-          
-          oscillator.connect(gainNode);
-          gainNode.connect(audioContext.destination);
-          
-          // WhatsApp-like notification sound
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-          oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-          oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
-          
-          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-          
-          oscillator.start(audioContext.currentTime);
-          oscillator.stop(audioContext.currentTime + 0.3);
-        } catch (error) {
-          console.log('Could not play notification sound:', error);
-        }
+        // Use notification service for sound and badge
+        notificationService.playNotificationSound();
+        
+        // Set badge count (WhatsApp-like)
+        const unreadCount = event.detail.unreadCount || 1;
+        notificationService.setBadgeCount(unreadCount);
+        console.log('Admin badge count set to:', unreadCount);
       }
       
       // Show new notification alert

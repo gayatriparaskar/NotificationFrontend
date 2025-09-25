@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { notificationsAPI } from '../utils/api';
 import { Bell, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
+import notificationService from '../services/notificationService';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
   const [filter, setFilter] = useState('all');
@@ -19,12 +20,16 @@ const NotificationCenter = ({ isOpen, onClose }) => {
   const markAsReadMutation = useMutation(notificationsAPI.markAsRead, {
     onSuccess: () => {
       refetch();
+      // Clear badge when notification is read
+      notificationService.clearBadge();
     }
   });
 
   const markAllAsReadMutation = useMutation(notificationsAPI.markAllAsRead, {
     onSuccess: () => {
       refetch();
+      // Clear badge when all notifications are read
+      notificationService.clearBadge();
     }
   });
 

@@ -88,11 +88,33 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Notification click event
+// Handle badge notifications
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SET_BADGE') {
+    const count = event.data.count || 0;
+    console.log('Service Worker: Setting badge count to', count);
+    
+    // Set badge count (works on supported browsers)
+    if ('setAppBadge' in navigator) {
+      navigator.setAppBadge(count).catch(error => {
+        console.log('Service Worker: Could not set badge:', error);
+      });
+    }
+  }
+});
+
+// Clear badge when notification is clicked
 self.addEventListener('notificationclick', (event) => {
   console.log('Service Worker: Notification click received');
   
   event.notification.close();
+  
+  // Clear badge count
+  if ('clearAppBadge' in navigator) {
+    navigator.clearAppBadge().catch(error => {
+      console.log('Service Worker: Could not clear badge:', error);
+    });
+  }
   
   if (event.action === 'explore') {
     // Open the app

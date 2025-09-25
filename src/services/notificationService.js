@@ -121,10 +121,93 @@ class NotificationService {
       // Initialize PWA install functionality
       this.initializePWAInstall();
 
+      // Initialize audio context for notification sounds
+      this.initializeAudioContext();
+
       return true;
     } catch (error) {
       console.error('Notification Service: Initialization failed:', error);
       return false;
+    }
+  }
+
+  // Initialize audio context for notification sounds
+  initializeAudioContext() {
+    try {
+      // Create audio context
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('Notification Service: Audio context initialized');
+      
+      // Add user interaction listeners to resume audio context
+      const resumeAudio = () => {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+          this.audioContext.resume().then(() => {
+            console.log('Notification Service: Audio context resumed on user interaction');
+          });
+        }
+      };
+
+      // Listen for user interactions
+      document.addEventListener('click', resumeAudio, { once: true });
+      document.addEventListener('touchstart', resumeAudio, { once: true });
+      document.addEventListener('keydown', resumeAudio, { once: true });
+      
+    } catch (error) {
+      console.log('Notification Service: Could not initialize audio context:', error);
+    }
+  }
+
+  // Set badge count (WhatsApp-like notifications)
+  setBadgeCount(count) {
+    try {
+      console.log('Notification Service: Setting badge count to', count);
+      
+      // Set badge using Badge API (modern browsers)
+      if ('setAppBadge' in navigator) {
+        navigator.setAppBadge(count).then(() => {
+          console.log('Notification Service: Badge set successfully');
+        }).catch(error => {
+          console.log('Notification Service: Could not set badge:', error);
+        });
+      }
+      
+      // Also send to service worker for additional support
+      if (this.registration && this.registration.active) {
+        this.registration.active.postMessage({
+          type: 'SET_BADGE',
+          count: count
+        });
+      }
+      
+    } catch (error) {
+      console.log('Notification Service: Could not set badge count:', error);
+    }
+  }
+
+  // Clear badge count
+  clearBadge() {
+    try {
+      console.log('Notification Service: Clearing badge');
+      
+      // Clear badge using Badge API
+      if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge().then(() => {
+          console.log('Notification Service: Badge cleared successfully');
+        }).catch(error => {
+          console.log('Notification Service: Could not clear badge:', error);
+        });
+      }
+      
+      // Also send to service worker
+      if (this.registration && this.registration.active) {
+        this.registration.active.postMessage({
+          type: 'SET_BADGE',
+          count: 0
+        });
+      }
+      
+    } catch (error) {
+      console.log('Notification Service: Could not clear badge:', error);
     }
   }
 
@@ -153,8 +236,37 @@ class NotificationService {
     try {
       console.log('Notification Service: Playing notification sound');
       
-      // Create audio context for notification sound
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Check if audio context is suspended and resume if needed
+      let audioContext = this.audioContext;
+      
+      if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioContext = audioContext;
+      }
+      
+      // Resume audio context if suspended (required for user interaction)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().then(() => {
+          console.log('Notification Service: Audio context resumed');
+          this.playSound(audioContext);
+        }).catch(error => {
+          console.log('Notification Service: Could not resume audio context:', error);
+          // Fallback to HTML5 audio
+          this.playFallbackSound();
+        });
+      } else {
+        this.playSound(audioContext);
+      }
+    } catch (error) {
+      console.log('Notification Service: Could not play notification sound:', error);
+      // Fallback to HTML5 audio
+      this.playFallbackSound();
+    }
+  }
+
+  // Play the actual sound
+  playSound(audioContext) {
+    try {
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
       
@@ -173,7 +285,37 @@ class NotificationService {
       oscillator.stop(audioContext.currentTime + 0.3);
       console.log('Notification Service: Notification sound played successfully');
     } catch (error) {
-      console.log('Notification Service: Could not play notification sound:', error);
+      console.log('Notification Service: Could not play sound:', error);
+      this.playFallbackSound();
+    }
+  }
+
+  // Fallback sound using HTML5 audio
+  playFallbackSound() {
+    try {
+      console.log('Notification Service: Playing fallback sound');
+      
+      // Create a simple beep sound using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Simple beep sound
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      
+      gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+      
+      console.log('Notification Service: Fallback sound played');
+    } catch (error) {
+      console.log('Notification Service: Could not play fallback sound:', error);
     }
   }
 
@@ -279,13 +421,33 @@ class NotificationService {
 
   // Check if PWA can be installed
   canInstall() {
+    // For mobile devices, show install button even without deferredPrompt
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    if (isMobile && !this.isInstalled) {
+      return true; // Always show install button on mobile
+    }
+    
     return this.deferredPrompt !== null && !this.isInstalled;
   }
 
   // Install PWA - Direct installation
   async installPWA() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
     if (!this.deferredPrompt) {
       console.log('PWA: No install prompt available');
+      
+      // For mobile devices, provide manual installation instructions
+      if (isMobile) {
+        return { 
+          success: false, 
+          message: 'Mobile PWA installation requires manual steps. Please use your browser menu to "Add to Home Screen" or "Install app".' 
+        };
+      }
+      
       return { success: false, message: 'Install prompt not available' };
     }
 

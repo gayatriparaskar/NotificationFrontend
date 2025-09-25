@@ -53,6 +53,11 @@ export const SocketProvider = ({ children }) => {
             data: data.notification
           });
           notificationService.playNotificationSound();
+          
+          // Set badge count (WhatsApp-like)
+          const unreadCount = data.unreadCount || 1;
+          notificationService.setBadgeCount(unreadCount);
+          console.log('Badge count set to:', unreadCount);
         }
         
         // Trigger a refetch of notifications

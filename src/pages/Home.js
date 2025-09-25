@@ -45,7 +45,7 @@ const Home = () => {
       } else {
         console.log('Home: PWA installation failed:', result.message);
         // Show helpful message for different scenarios
-        if (result.message.includes('not available')) {
+        if (result.message.includes('not available') || result.message.includes('manual steps')) {
           // Detect device type for better instructions
           const userAgent = navigator.userAgent.toLowerCase();
           const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
@@ -56,7 +56,7 @@ const Home = () => {
           
           if (isMobile) {
             if (isAndroid) {
-              instructions = '📱 Android Device Detected\n\nTo install SnakeShop app:\n1. Tap the browser menu (⋮) in Chrome\n2. Look for "Install app" or "Add to Home Screen"\n3. Tap it to install\n\nIf you don\'t see the option, try:\n- Using Chrome browser\n- Visiting the site in HTTPS\n- Clearing browser cache';
+              instructions = '📱 Android Device Detected\n\n✅ PWA is working! The "Create shortcut" dialog you saw is correct!\n\nTo complete installation:\n1. Tap "Add" in the "Create shortcut" dialog\n2. The app will be added to your home screen\n3. You can then open it like a native app\n\nIf you missed the dialog:\n1. Tap the browser menu (⋮)\n2. Look for "Install app" or "Add to Home Screen"\n3. Tap it to install';
             } else if (isIOS) {
               instructions = '🍎 iOS Device Detected\n\nTo install SnakeShop app:\n1. Tap the Share button (⬆️) at the bottom\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top right\n4. The app will appear on your home screen\n\n✨ iOS PWA Features:\n• App-like experience\n• Offline functionality\n• Push notifications\n• Full screen mode\n\nNote: iOS requires manual installation';
             } else {
