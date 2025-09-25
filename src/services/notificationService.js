@@ -169,6 +169,8 @@ class NotificationService {
         }).catch(error => {
           console.log('Notification Service: Could not set badge:', error);
         });
+      } else {
+        console.log('Notification Service: Badge API not supported');
       }
       
       // Also send to service worker for additional support
@@ -178,6 +180,9 @@ class NotificationService {
           count: count
         });
       }
+      
+      // Store badge count in localStorage as fallback
+      localStorage.setItem('badge-count', count.toString());
       
     } catch (error) {
       console.log('Notification Service: Could not set badge count:', error);
@@ -205,6 +210,9 @@ class NotificationService {
           count: 0
         });
       }
+      
+      // Clear badge count from localStorage
+      localStorage.removeItem('badge-count');
       
     } catch (error) {
       console.log('Notification Service: Could not clear badge:', error);
@@ -236,13 +244,8 @@ class NotificationService {
     try {
       console.log('Notification Service: Playing notification sound');
       
-      // Check if audio context is suspended and resume if needed
-      let audioContext = this.audioContext;
-      
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.audioContext = audioContext;
-      }
+      // Always try to create a new audio context for better compatibility
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       
       // Resume audio context if suspended (required for user interaction)
       if (audioContext.state === 'suspended') {

@@ -17,8 +17,9 @@ const PWAInstallPrompt = () => {
       const status = notificationService.getInstallStatus();
       setInstallStatus(status);
       
-      // Show prompt if can install and not already installed
-      if (status.canInstall && !status.isInstalled) {
+      // Only show prompt if can install, not already installed, and user hasn't dismissed it
+      const hasDismissed = localStorage.getItem('pwa-install-dismissed');
+      if (status.canInstall && !status.isInstalled && !hasDismissed) {
         setShowPrompt(true);
       }
     };
@@ -26,8 +27,8 @@ const PWAInstallPrompt = () => {
     // Check status immediately
     checkStatus();
 
-    // Check status periodically
-    const interval = setInterval(checkStatus, 2000);
+    // Check status periodically (less frequent)
+    const interval = setInterval(checkStatus, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -53,6 +54,8 @@ const PWAInstallPrompt = () => {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    // Remember that user dismissed the prompt
+    localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
   // Don't show if already installed or can't install
