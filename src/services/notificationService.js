@@ -234,8 +234,26 @@ class NotificationService {
     // Store in localStorage for persistence
     if (count > 0) {
       localStorage.setItem('mobile-badge-count', count.toString());
+      console.log('Notification Service: Mobile badge count stored in localStorage:', count);
     } else {
       localStorage.removeItem('mobile-badge-count');
+      console.log('Notification Service: Mobile badge count cleared from localStorage');
+    }
+    
+    // Force update the badge count in the UI
+    this.forceBadgeUpdate(count);
+  }
+
+  // Force badge update in the UI
+  forceBadgeUpdate(count) {
+    try {
+      // Dispatch a custom event to update UI components
+      window.dispatchEvent(new CustomEvent('badge-update', { 
+        detail: { count: count } 
+      }));
+      console.log('Notification Service: Badge update event dispatched with count:', count);
+    } catch (error) {
+      console.log('Notification Service: Could not dispatch badge update event:', error);
     }
   }
 
@@ -504,6 +522,26 @@ class NotificationService {
     } catch (error) {
       console.log('Notification Service: Could not restore badge count:', error);
     }
+  }
+
+  // Debug function to check badge status
+  debugBadgeStatus() {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const isAndroid = userAgent.includes('android');
+    const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+    
+    console.log('=== BADGE DEBUG INFO ===');
+    console.log('User Agent:', userAgent);
+    console.log('Is Mobile:', isMobile);
+    console.log('Is Android:', isAndroid);
+    console.log('Is iOS:', isIOS);
+    console.log('Badge API Support:', 'setAppBadge' in navigator);
+    console.log('Current Badge Count (localStorage):', localStorage.getItem('mobile-badge-count'));
+    console.log('Current Badge Count (badge-count):', localStorage.getItem('badge-count'));
+    console.log('Document Title:', document.title);
+    console.log('Service Worker Registration:', !!this.registration);
+    console.log('========================');
   }
 
   // Check if PWA is already installed

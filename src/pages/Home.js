@@ -38,13 +38,27 @@ const Home = () => {
       }
     };
 
+    // Listen for badge update events
+    const handleBadgeUpdate = (event) => {
+      console.log('Home: Badge update event received:', event.detail);
+      if (event.detail && event.detail.count !== undefined) {
+        setBadgeCount(event.detail.count);
+      }
+    };
+
     // Check immediately
     checkBadgeCount();
+
+    // Listen for badge update events
+    window.addEventListener('badge-update', handleBadgeUpdate);
 
     // Check periodically
     const badgeInterval = setInterval(checkBadgeCount, 2000);
 
-    return () => clearInterval(badgeInterval);
+    return () => {
+      clearInterval(badgeInterval);
+      window.removeEventListener('badge-update', handleBadgeUpdate);
+    };
   }, []);
 
   const handleInstallClick = async () => {
@@ -85,14 +99,37 @@ const Home = () => {
 
   const handleTestBadge = () => {
     // Test badge notification
+    console.log('Home: Testing badge count...');
     notificationService.setBadgeCount(5);
-    alert('Badge count set to 5! Check your app icon.');
+    alert('Badge count set to 5! Check your app icon and browser tab title.');
     
-    // Clear badge after 3 seconds
+    // Clear badge after 5 seconds
     setTimeout(() => {
+      console.log('Home: Clearing badge count...');
       notificationService.clearBadge();
       alert('Badge cleared!');
-    }, 3000);
+    }, 5000);
+  };
+
+  const handleTestMobileBadge = () => {
+    // Test mobile badge specifically
+    console.log('Home: Testing mobile badge...');
+    notificationService.setMobileBadgeFallback(3);
+    alert('Mobile badge set to 3! Check browser tab title and in-app indicator.');
+    
+    // Clear after 5 seconds
+    setTimeout(() => {
+      console.log('Home: Clearing mobile badge...');
+      notificationService.setMobileBadgeFallback(0);
+      alert('Mobile badge cleared!');
+    }, 5000);
+  };
+
+  const handleDebugBadge = () => {
+    // Debug badge status
+    console.log('Home: Debugging badge status...');
+    notificationService.debugBadgeStatus();
+    alert('Badge debug info logged to console. Check browser console for details.');
   };
 
   const features = [
@@ -212,6 +249,18 @@ const Home = () => {
                     className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
                   >
                     Test Badge Count
+                  </button>
+                  <button
+                    onClick={handleTestMobileBadge}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Test Mobile Badge
+                  </button>
+                  <button
+                    onClick={handleDebugBadge}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Debug Badge
                   </button>
                 </div>
                 <p className="text-primary-100 text-sm mt-2 text-center">
