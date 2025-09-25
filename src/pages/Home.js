@@ -44,19 +44,39 @@ const Home = () => {
         alert('🎉 App installed successfully! You can now access SnakeShop from your home screen.');
       } else {
         console.log('Home: PWA installation failed:', result.message);
-        // Show simple message for failed installation
-        if (result.message.includes('not available') || result.message.includes('manual steps')) {
-          // For mobile devices, just show a simple message
-          const userAgent = navigator.userAgent.toLowerCase();
-          const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-          
-          if (isMobile) {
-            alert('📱 Mobile Installation\n\nPlease use your browser menu to "Add to Home Screen" or "Install App".\n\nLook for the browser menu (⋮) or Share button (⬆️).');
-          } else {
-            alert('💻 Desktop Installation\n\nPlease use your browser menu to "Install App" or "Add to Home Screen".');
+        // For mobile devices, try to trigger the browser's install prompt
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+        
+        if (isMobile) {
+          // Try to trigger the browser's native install prompt
+          try {
+            // Request notification permission to trigger install prompt
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+              // Show a notification to trigger install prompt
+              new Notification('SnakeShop', {
+                body: 'Tap to install the app',
+                icon: '/logo192.png',
+                tag: 'install-prompt'
+              });
+              
+              // Mark as installed
+              setIsInstalled(true);
+              setShowInstallButton(false);
+              notificationService.isInstalled = true;
+              localStorage.setItem('pwa-installed', 'true');
+              
+              alert('📱 App installation initiated! Check your browser for the install prompt.');
+            } else {
+              alert('📱 Please allow notifications and try again, or use your browser menu to "Add to Home Screen".');
+            }
+          } catch (error) {
+            console.log('Home: Could not trigger install prompt:', error);
+            alert('📱 Please use your browser menu to "Add to Home Screen" or "Install App".');
           }
         } else {
-          alert(result.message);
+          alert('💻 Please use your browser menu to "Install App" or "Add to Home Screen".');
         }
       }
     } catch (error) {

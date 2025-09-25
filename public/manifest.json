@@ -35,10 +35,10 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "id": "snakeshop-pwa",
+  "prefer_related_applications": false,
   "categories": ["shopping", "business"],
   "lang": "en",
   "dir": "ltr",
-  "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 400
   },
