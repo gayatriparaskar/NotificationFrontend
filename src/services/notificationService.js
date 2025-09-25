@@ -173,29 +173,50 @@ class NotificationService {
       
       console.log('Notification Service: Device info - Mobile:', isMobile, 'Android:', isAndroid, 'iOS:', isIOS);
       
-      // Set badge using Badge API (works on desktop and limited mobile support)
-      if ('setAppBadge' in navigator) {
-        if (count > 0) {
-          navigator.setAppBadge(count).then(() => {
-            console.log('Notification Service: Badge set successfully to', count);
-          }).catch(error => {
-            console.log('Notification Service: Could not set badge:', error);
-            // Fallback for mobile devices
-            this.setMobileBadgeFallback(count);
-          });
-        } else {
-          navigator.clearAppBadge().then(() => {
-            console.log('Notification Service: Badge cleared successfully');
-          }).catch(error => {
-            console.log('Notification Service: Could not clear badge:', error);
-            // Fallback for mobile devices
-            this.setMobileBadgeFallback(0);
-          });
+      // For mobile devices, prioritize mobile-specific badge handling
+      if (isMobile) {
+        console.log('Notification Service: Mobile device detected, using mobile badge handling');
+        this.setMobileBadgeFallback(count);
+        
+        // Also try native Badge API if available (Android Chrome)
+        if ('setAppBadge' in navigator) {
+          console.log('Notification Service: Also trying native Badge API on mobile');
+          if (count > 0) {
+            navigator.setAppBadge(count).then(() => {
+              console.log('Notification Service: Mobile native badge set successfully to', count);
+            }).catch(error => {
+              console.log('Notification Service: Mobile native badge failed:', error);
+            });
+          } else {
+            navigator.clearAppBadge().then(() => {
+              console.log('Notification Service: Mobile native badge cleared successfully');
+            }).catch(error => {
+              console.log('Notification Service: Mobile native badge clear failed:', error);
+            });
+          }
         }
       } else {
-        console.log('Notification Service: Badge API not supported, using fallback');
-        // Use fallback for unsupported browsers (mainly iOS)
-        this.setMobileBadgeFallback(count);
+        // Desktop: Use native Badge API
+        if ('setAppBadge' in navigator) {
+          if (count > 0) {
+            navigator.setAppBadge(count).then(() => {
+              console.log('Notification Service: Desktop badge set successfully to', count);
+            }).catch(error => {
+              console.log('Notification Service: Could not set desktop badge:', error);
+              this.setMobileBadgeFallback(count);
+            });
+          } else {
+            navigator.clearAppBadge().then(() => {
+              console.log('Notification Service: Desktop badge cleared successfully');
+            }).catch(error => {
+              console.log('Notification Service: Could not clear desktop badge:', error);
+              this.setMobileBadgeFallback(0);
+            });
+          }
+        } else {
+          console.log('Notification Service: Badge API not supported, using fallback');
+          this.setMobileBadgeFallback(count);
+        }
       }
       
       // Also send to service worker for additional support
@@ -213,8 +234,8 @@ class NotificationService {
         localStorage.removeItem('badge-count');
       }
       
-      // Update document title for mobile fallback
-      this.updateDocumentTitle(count);
+      // Force badge update event for UI components
+      this.forceBadgeUpdate(count);
       
     } catch (error) {
       console.log('Notification Service: Could not set badge count:', error);
@@ -225,23 +246,95 @@ class NotificationService {
   setMobileBadgeFallback(count) {
     console.log('Notification Service: Using mobile badge fallback for count:', count);
     
-    // Update document title with badge count
+    // Update document title with badge count (most reliable on mobile)
     this.updateDocumentTitle(count);
+    console.log('Notification Service: Document title updated for mobile');
     
     // Update favicon with badge (if possible)
     this.updateFaviconBadge(count);
+    console.log('Notification Service: Favicon badge updated for mobile');
     
     // Store in localStorage for persistence
     if (count > 0) {
       localStorage.setItem('mobile-badge-count', count.toString());
+      localStorage.setItem('badge-timestamp', Date.now().toString());
       console.log('Notification Service: Mobile badge count stored in localStorage:', count);
     } else {
       localStorage.removeItem('mobile-badge-count');
+      localStorage.removeItem('badge-timestamp');
       console.log('Notification Service: Mobile badge count cleared from localStorage');
     }
     
     // Force update the badge count in the UI
     this.forceBadgeUpdate(count);
+    
+    // Additional mobile-specific badge handling
+    this.handleMobileSpecificBadge(count);
+  }
+
+  // Handle mobile-specific badge features
+  handleMobileSpecificBadge(count) {
+    try {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isAndroid = userAgent.includes('android');
+      const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
+      
+      if (isAndroid) {
+        console.log('Notification Service: Android-specific badge handling');
+        // Android Chrome might support some badge features
+        this.handleAndroidBadge(count);
+      } else if (isIOS) {
+        console.log('Notification Service: iOS-specific badge handling');
+        // iOS Safari has limited badge support
+        this.handleiOSBadge(count);
+      }
+    } catch (error) {
+      console.log('Notification Service: Mobile-specific badge handling failed:', error);
+    }
+  }
+
+  // Handle Android-specific badge features
+  handleAndroidBadge(count) {
+    try {
+      // Try to use Android-specific badge methods if available
+      if (navigator.setAppBadge) {
+        if (count > 0) {
+          navigator.setAppBadge(count).then(() => {
+            console.log('Notification Service: Android badge set successfully');
+          }).catch(error => {
+            console.log('Notification Service: Android badge failed:', error);
+          });
+        } else {
+          navigator.clearAppBadge().then(() => {
+            console.log('Notification Service: Android badge cleared successfully');
+          }).catch(error => {
+            console.log('Notification Service: Android badge clear failed:', error);
+          });
+        }
+      }
+    } catch (error) {
+      console.log('Notification Service: Android badge handling failed:', error);
+    }
+  }
+
+  // Handle iOS-specific badge features
+  handleiOSBadge(count) {
+    try {
+      // iOS has very limited badge support, rely on fallbacks
+      console.log('Notification Service: iOS badge fallback - using document title and in-app indicators');
+      
+      // Force update document title (most reliable on iOS)
+      this.updateDocumentTitle(count);
+      
+      // Store badge count for in-app display
+      if (count > 0) {
+        localStorage.setItem('ios-badge-count', count.toString());
+      } else {
+        localStorage.removeItem('ios-badge-count');
+      }
+    } catch (error) {
+      console.log('Notification Service: iOS badge handling failed:', error);
+    }
   }
 
   // Force badge update in the UI

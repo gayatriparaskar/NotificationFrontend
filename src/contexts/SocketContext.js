@@ -43,6 +43,7 @@ export const SocketProvider = ({ children }) => {
         console.log('Real-time notification received:', data);
         console.log('Notification type:', data.notification?.type);
         console.log('Notification title:', data.notification?.title);
+        console.log('Unread count from server:', data.unreadCount);
         
         // Show notification and play sound
         if (data.notification) {
@@ -54,10 +55,28 @@ export const SocketProvider = ({ children }) => {
           });
           notificationService.playNotificationSound();
           
-          // Set badge count (WhatsApp-like)
+          // Set badge count (WhatsApp-like) - Force badge update
           const unreadCount = data.unreadCount || 1;
-          notificationService.setBadgeCount(unreadCount);
-          console.log('Badge count set to:', unreadCount);
+          console.log('SocketContext: Setting badge count to:', unreadCount);
+          
+          // Force badge update with detailed logging
+          try {
+            notificationService.setBadgeCount(unreadCount);
+            console.log('SocketContext: Badge count set successfully');
+            
+            // Also force mobile badge fallback
+            notificationService.setMobileBadgeFallback(unreadCount);
+            console.log('SocketContext: Mobile badge fallback set');
+            
+            // Dispatch badge update event
+            window.dispatchEvent(new CustomEvent('badge-update', { 
+              detail: { count: unreadCount } 
+            }));
+            console.log('SocketContext: Badge update event dispatched');
+            
+          } catch (error) {
+            console.error('SocketContext: Error setting badge:', error);
+          }
         }
         
         // Trigger a refetch of notifications

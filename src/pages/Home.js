@@ -132,6 +132,67 @@ const Home = () => {
     alert('Badge debug info logged to console. Check browser console for details.');
   };
 
+  const handleSimulateNotification = () => {
+    // Simulate a real notification with badge
+    console.log('Home: Simulating real notification...');
+    
+    // Simulate the data structure that comes from the server
+    const mockNotificationData = {
+      notification: {
+        _id: 'mock-notification-id',
+        title: 'New Order Placed!',
+        message: 'A customer has placed a new order.',
+        type: 'order_placed'
+      },
+      unreadCount: 3
+    };
+    
+    // Show notification
+    notificationService.showLocalNotification(mockNotificationData.notification.title, {
+      body: mockNotificationData.notification.message,
+      tag: mockNotificationData.notification._id
+    });
+    
+    // Play sound
+    notificationService.playNotificationSound();
+    
+    // Set badge count
+    const unreadCount = mockNotificationData.unreadCount;
+    console.log('Home: Setting badge count to:', unreadCount);
+    
+    notificationService.setBadgeCount(unreadCount);
+    notificationService.setMobileBadgeFallback(unreadCount);
+    
+    // Dispatch badge update event
+    window.dispatchEvent(new CustomEvent('badge-update', { 
+      detail: { count: unreadCount } 
+    }));
+    
+    alert(`Simulated notification with badge count: ${unreadCount}`);
+  };
+
+  const handleTestMobileBadgeOnly = () => {
+    // Test mobile badge specifically
+    console.log('Home: Testing mobile badge only...');
+    
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    if (isMobile) {
+      console.log('Home: Mobile device detected, testing mobile badge...');
+      notificationService.setMobileBadgeFallback(5);
+      alert('Mobile badge test: Check browser tab title and in-app indicator!');
+      
+      // Clear after 5 seconds
+      setTimeout(() => {
+        notificationService.setMobileBadgeFallback(0);
+        alert('Mobile badge cleared!');
+      }, 5000);
+    } else {
+      alert('This test is for mobile devices only. Please test on mobile.');
+    }
+  };
+
   const features = [
     {
       icon: <Calendar className="h-8 w-8 text-primary-600" />,
@@ -261,6 +322,18 @@ const Home = () => {
                     className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
                   >
                     Debug Badge
+                  </button>
+                  <button
+                    onClick={handleSimulateNotification}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Simulate Notification
+                  </button>
+                  <button
+                    onClick={handleTestMobileBadgeOnly}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Test Mobile Badge
                   </button>
                 </div>
                 <p className="text-primary-100 text-sm mt-2 text-center">

@@ -23,19 +23,56 @@ import CustomerProducts from './pages/CustomerProducts';
 
 function App() {
   useEffect(() => {
-    // Register service worker for offline functionality
-    notificationService.registerServiceWorker();
+    // Initialize notification service completely
+    const initializeNotifications = async () => {
+      try {
+        console.log('App: Initializing notification service...');
+        
+        // Register service worker
+        await notificationService.registerServiceWorker();
+        console.log('App: Service worker registered');
+        
+        // Initialize PWA installation
+        notificationService.initializePWAInstall();
+        console.log('App: PWA installation initialized');
+        
+        // Initialize audio context
+        notificationService.initializeAudioContext();
+        console.log('App: Audio context initialized');
+        
+        // Restore badge count for mobile devices
+        notificationService.restoreBadgeCount();
+        console.log('App: Badge count restored');
+        
+        console.log('App: Notification service fully initialized');
+      } catch (error) {
+        console.error('App: Error initializing notification service:', error);
+      }
+    };
+    
+    initializeNotifications();
     
     // Handle online/offline events
     const handleOnline = () => notificationService.handleOnline();
     const handleOffline = () => notificationService.handleOffline();
     
+    // Handle global badge updates
+    const handleBadgeUpdate = (event) => {
+      console.log('App: Global badge update received:', event.detail);
+      // Force update document title
+      if (event.detail && event.detail.count !== undefined) {
+        notificationService.updateDocumentTitle(event.detail.count);
+      }
+    };
+    
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('badge-update', handleBadgeUpdate);
     
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('badge-update', handleBadgeUpdate);
     };
   }, []);
 
