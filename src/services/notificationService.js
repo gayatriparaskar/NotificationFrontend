@@ -164,11 +164,19 @@ class NotificationService {
       
       // Set badge using Badge API (modern browsers)
       if ('setAppBadge' in navigator) {
-        navigator.setAppBadge(count).then(() => {
-          console.log('Notification Service: Badge set successfully');
-        }).catch(error => {
-          console.log('Notification Service: Could not set badge:', error);
-        });
+        if (count > 0) {
+          navigator.setAppBadge(count).then(() => {
+            console.log('Notification Service: Badge set successfully to', count);
+          }).catch(error => {
+            console.log('Notification Service: Could not set badge:', error);
+          });
+        } else {
+          navigator.clearAppBadge().then(() => {
+            console.log('Notification Service: Badge cleared successfully');
+          }).catch(error => {
+            console.log('Notification Service: Could not clear badge:', error);
+          });
+        }
       } else {
         console.log('Notification Service: Badge API not supported');
       }
@@ -182,7 +190,11 @@ class NotificationService {
       }
       
       // Store badge count in localStorage as fallback
-      localStorage.setItem('badge-count', count.toString());
+      if (count > 0) {
+        localStorage.setItem('badge-count', count.toString());
+      } else {
+        localStorage.removeItem('badge-count');
+      }
       
     } catch (error) {
       console.log('Notification Service: Could not set badge count:', error);
@@ -424,15 +436,8 @@ class NotificationService {
 
   // Check if PWA can be installed
   canInstall() {
-    // For mobile devices, show install button even without deferredPrompt
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-    
-    if (isMobile && !this.isInstalled) {
-      return true; // Always show install button on mobile
-    }
-    
-    return this.deferredPrompt !== null && !this.isInstalled;
+    // Always show install button if not installed
+    return !this.isInstalled;
   }
 
   // Install PWA - Direct installation
@@ -440,47 +445,47 @@ class NotificationService {
     const userAgent = navigator.userAgent.toLowerCase();
     const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
     
-    if (!this.deferredPrompt) {
-      console.log('PWA: No install prompt available');
-      
-      // For mobile devices, provide manual installation instructions
-      if (isMobile) {
-        return { 
-          success: false, 
-          message: 'Mobile PWA installation requires manual steps. Please use your browser menu to "Add to Home Screen" or "Install app".' 
-        };
+    // Try to use deferred prompt first
+    if (this.deferredPrompt) {
+      try {
+        console.log('PWA: Using deferred prompt for installation');
+        
+        // Show the install prompt immediately
+        this.deferredPrompt.prompt();
+        
+        // Wait for user choice
+        const { outcome } = await this.deferredPrompt.userChoice;
+        console.log('PWA: Install prompt outcome:', outcome);
+        
+        // Clear the prompt
+        this.deferredPrompt = null;
+        
+        if (outcome === 'accepted') {
+          this.isInstalled = true;
+          localStorage.setItem('pwa-installed', 'true');
+          console.log('PWA: App installation accepted');
+          return { success: true, message: 'App installed successfully! You can now access it from your home screen.' };
+        } else {
+          console.log('PWA: App installation declined by user');
+          return { success: false, message: 'Installation was declined' };
+        }
+      } catch (error) {
+        console.error('PWA: Deferred prompt failed:', error);
+        // Fall through to manual installation
       }
-      
-      return { success: false, message: 'Install prompt not available' };
     }
-
-    try {
-      console.log('PWA: Triggering direct installation');
-      
-      // Show the install prompt immediately
-      this.deferredPrompt.prompt();
-      
-      // Wait for user choice
-      const { outcome } = await this.deferredPrompt.userChoice;
-      console.log('PWA: Install prompt outcome:', outcome);
-      
-      // Clear the prompt
-      this.deferredPrompt = null;
-      
-      if (outcome === 'accepted') {
-        this.isInstalled = true;
-        // Mark as installed in localStorage
-        localStorage.setItem('pwa-installed', 'true');
-        console.log('PWA: App installation accepted');
-        return { success: true, message: 'App installed successfully! You can now access it from your home screen.' };
-      } else {
-        console.log('PWA: App installation declined by user');
-        return { success: false, message: 'Installation was declined' };
-      }
-    } catch (error) {
-      console.error('PWA: Install failed:', error);
-      return { success: false, message: 'Installation failed. Please try again.' };
+    
+    // Fallback: Manual installation instructions
+    console.log('PWA: No deferred prompt available, showing manual instructions');
+    
+    if (isMobile) {
+      return { 
+        success: false, 
+        message: 'Mobile PWA installation requires manual steps. Please use your browser menu to "Add to Home Screen" or "Install app".' 
+      };
     }
+    
+    return { success: false, message: 'Please use your browser menu to "Install App" or "Add to Home Screen".' };
   }
 
   // Get install status

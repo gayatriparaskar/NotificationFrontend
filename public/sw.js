@@ -96,9 +96,21 @@ self.addEventListener('message', (event) => {
     
     // Set badge count (works on supported browsers)
     if ('setAppBadge' in navigator) {
-      navigator.setAppBadge(count).catch(error => {
-        console.log('Service Worker: Could not set badge:', error);
-      });
+      if (count > 0) {
+        navigator.setAppBadge(count).then(() => {
+          console.log('Service Worker: Badge set successfully to', count);
+        }).catch(error => {
+          console.log('Service Worker: Could not set badge:', error);
+        });
+      } else {
+        navigator.clearAppBadge().then(() => {
+          console.log('Service Worker: Badge cleared successfully');
+        }).catch(error => {
+          console.log('Service Worker: Could not clear badge:', error);
+        });
+      }
+    } else {
+      console.log('Service Worker: Badge API not supported');
     }
   }
 });

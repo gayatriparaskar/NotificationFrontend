@@ -15,15 +15,15 @@ const Home = () => {
       console.log('Home: PWA status:', status);
       
       // Show button only if not installed
-      setShowInstallButton(!status.isInstalled);
+      setShowInstallButton(status.canInstall);
       setIsInstalled(status.isInstalled);
     };
 
     // Check immediately
     checkInstallStatus();
 
-    // Check periodically
-    const interval = setInterval(checkInstallStatus, 1000);
+    // Check periodically (less frequent)
+    const interval = setInterval(checkInstallStatus, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -69,6 +69,18 @@ const Home = () => {
 
   const handleTestSound = () => {
     notificationService.playNotificationSound();
+  };
+
+  const handleTestBadge = () => {
+    // Test badge notification
+    notificationService.setBadgeCount(5);
+    alert('Badge count set to 5! Check your app icon.');
+    
+    // Clear badge after 3 seconds
+    setTimeout(() => {
+      notificationService.clearBadge();
+      alert('Badge cleared!');
+    }, 3000);
   };
 
   const features = [
@@ -172,6 +184,12 @@ const Home = () => {
                     className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
                   >
                     Test Notification Sound
+                  </button>
+                  <button
+                    onClick={handleTestBadge}
+                    className="btn btn-sm bg-white bg-opacity-20 text-white hover:bg-opacity-30 border border-white border-opacity-30"
+                  >
+                    Test Badge Count
                   </button>
                 </div>
                 <p className="text-primary-100 text-sm mt-2 text-center">
