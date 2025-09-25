@@ -27,17 +27,18 @@
       "purpose": "apple-touch-icon"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "theme_color": "#1e40af",
   "background_color": "#ffffff",
   "orientation": "portrait-primary",
   "scope": "/",
+  "id": "snakeshop-pwa",
   "categories": ["shopping", "business"],
   "lang": "en",
   "dir": "ltr",
   "prefer_related_applications": false,
-  "display_override": ["window-controls-overlay", "standalone"],
   "edge_side_panel": {
     "preferred_width": 400
   },
