@@ -363,8 +363,73 @@ class NotificationService {
       // Method 3: Update favicon with badge
       this.updateFaviconBadge(count);
       
+      // Method 4: Force badge through multiple approaches
+      this.forceMobileBadge(count);
+      
     } catch (error) {
       console.log('Notification Service: Mobile app icon badge failed:', error);
+    }
+  }
+
+  // Force mobile badge using aggressive methods
+  forceMobileBadge(count) {
+    try {
+      console.log('Notification Service: Force setting mobile badge to', count);
+      
+      // Check if running as PWA
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = window.navigator.standalone === true;
+      
+      if (isStandalone || isIOSStandalone) {
+        console.log('Notification Service: PWA detected, using aggressive badge methods');
+        
+        // Method 1: Try native Badge API multiple times
+        if ('setAppBadge' in navigator) {
+          for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+              if (count > 0) {
+                navigator.setAppBadge(count).then(() => {
+                  console.log('Notification Service: Force badge set attempt', i + 1, 'successful');
+                }).catch(error => {
+                  console.log('Notification Service: Force badge attempt', i + 1, 'failed:', error);
+                });
+              } else {
+                navigator.clearAppBadge().then(() => {
+                  console.log('Notification Service: Force badge clear attempt', i + 1, 'successful');
+                }).catch(error => {
+                  console.log('Notification Service: Force badge clear attempt', i + 1, 'failed:', error);
+                });
+              }
+            }, i * 100);
+          }
+        }
+        
+        // Method 2: Show persistent notification for badge
+        if (count > 0 && Notification.permission === 'granted') {
+          try {
+            const notification = new Notification('SnakeShop', {
+              body: `${count} new notifications`,
+              icon: '/logo192.png',
+              badge: '/logo192.png',
+              tag: 'force-badge',
+              silent: false,
+              requireInteraction: false
+            });
+            
+            // Keep notification for a short time to trigger badge
+            setTimeout(() => {
+              notification.close();
+            }, 1000);
+            
+            console.log('Notification Service: Force badge notification shown');
+          } catch (error) {
+            console.log('Notification Service: Force badge notification failed:', error);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.log('Notification Service: Force mobile badge failed:', error);
     }
   }
 

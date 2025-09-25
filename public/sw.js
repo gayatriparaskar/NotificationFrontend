@@ -102,44 +102,91 @@ self.addEventListener('message', (event) => {
 // Enhanced badge setting with mobile fallbacks
 async function setBadgeWithFallback(count) {
   try {
-    // Method 1: Try native Badge API
+    console.log('Service Worker: Setting badge with count:', count);
+    
+    // Method 1: Try native Badge API (most reliable)
     if ('setAppBadge' in navigator) {
       console.log('Service Worker: Trying native Badge API');
-      if (count > 0) {
-        await navigator.setAppBadge(count);
-        console.log('Service Worker: Native badge set successfully to', count);
+      try {
+        if (count > 0) {
+          await navigator.setAppBadge(count);
+          console.log('Service Worker: Native badge set successfully to', count);
+        } else {
+          await navigator.clearAppBadge();
+          console.log('Service Worker: Native badge cleared successfully');
+        }
         return;
-      } else {
-        await navigator.clearAppBadge();
-        console.log('Service Worker: Native badge cleared successfully');
-        return;
+      } catch (error) {
+        console.log('Service Worker: Native Badge API failed:', error);
       }
     }
     
-    // Method 2: Try alternative badge methods for mobile
-    console.log('Service Worker: Native Badge API not available, trying alternatives');
-    
-    // For mobile devices, try to trigger badge through notifications
+    // Method 2: Force badge through persistent notification (Android)
+    console.log('Service Worker: Trying persistent notification method');
     if (count > 0) {
-      // Show a silent notification to trigger badge
-      await self.registration.showNotification('SnakeShop', {
-        body: `${count} new notifications`,
-        icon: '/logo192.png',
-        badge: '/logo192.png',
-        tag: 'badge-notification',
-        silent: true,
-        requireInteraction: false,
-        data: { badgeCount: count }
-      });
-      
-      // Close the notification immediately to just trigger the badge
-      setTimeout(() => {
-        self.registration.getNotifications({ tag: 'badge-notification' }).then(notifications => {
-          notifications.forEach(notification => notification.close());
+      try {
+        // Show a persistent notification to force badge
+        await self.registration.showNotification('SnakeShop', {
+          body: `${count} new notifications`,
+          icon: '/logo192.png',
+          badge: '/logo192.png',
+          tag: 'persistent-badge',
+          silent: false,
+          requireInteraction: false,
+          data: { 
+            badgeCount: count,
+            persistent: true 
+          },
+          actions: [
+            {
+              action: 'view',
+              title: 'View Notifications',
+              icon: '/logo192.png'
+            }
+          ]
         });
-      }, 100);
-      
-      console.log('Service Worker: Mobile badge triggered via notification');
+        console.log('Service Worker: Persistent notification badge set');
+      } catch (error) {
+        console.log('Service Worker: Persistent notification failed:', error);
+      }
+    } else {
+      // Clear persistent notification
+      try {
+        const notifications = await self.registration.getNotifications({ tag: 'persistent-badge' });
+        notifications.forEach(notification => notification.close());
+        console.log('Service Worker: Persistent notification cleared');
+      } catch (error) {
+        console.log('Service Worker: Clear persistent notification failed:', error);
+      }
+    }
+    
+    // Method 3: Try silent notification method
+    if (count > 0) {
+      try {
+        await self.registration.showNotification('SnakeShop', {
+          body: `${count} new notifications`,
+          icon: '/logo192.png',
+          badge: '/logo192.png',
+          tag: 'silent-badge',
+          silent: true,
+          requireInteraction: false,
+          data: { badgeCount: count }
+        });
+        
+        // Close after a short delay
+        setTimeout(async () => {
+          try {
+            const notifications = await self.registration.getNotifications({ tag: 'silent-badge' });
+            notifications.forEach(notification => notification.close());
+          } catch (error) {
+            console.log('Service Worker: Close silent notification failed:', error);
+          }
+        }, 200);
+        
+        console.log('Service Worker: Silent notification badge triggered');
+      } catch (error) {
+        console.log('Service Worker: Silent notification failed:', error);
+      }
     }
     
   } catch (error) {

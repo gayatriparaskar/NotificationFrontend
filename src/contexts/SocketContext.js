@@ -55,24 +55,39 @@ export const SocketProvider = ({ children }) => {
           });
           notificationService.playNotificationSound();
           
-          // Set badge count (WhatsApp-like) - Force badge update
+          // Set badge count (WhatsApp-like) - Aggressive badge update for real-time
           const unreadCount = data.unreadCount || 1;
-          console.log('SocketContext: Setting badge count to:', unreadCount);
+          console.log('SocketContext: Real-time notification - Setting badge count to:', unreadCount);
           
-          // Force badge update with detailed logging
+          // Aggressive badge update for real-time notifications
           try {
+            // Method 1: Standard badge setting
             notificationService.setBadgeCount(unreadCount);
-            console.log('SocketContext: Badge count set successfully');
+            console.log('SocketContext: Standard badge set');
             
-            // Also force mobile badge fallback
+            // Method 2: Mobile badge fallback
             notificationService.setMobileBadgeFallback(unreadCount);
             console.log('SocketContext: Mobile badge fallback set');
             
-            // Dispatch badge update event
+            // Method 3: Force mobile badge for installed PWA
+            notificationService.setMobileAppIconBadge(unreadCount);
+            console.log('SocketContext: Mobile app icon badge set');
+            
+            // Method 4: Force badge for PWA
+            notificationService.forceMobileBadge(unreadCount);
+            console.log('SocketContext: Force mobile badge set');
+            
+            // Method 5: Dispatch badge update event
             window.dispatchEvent(new CustomEvent('badge-update', { 
               detail: { count: unreadCount } 
             }));
             console.log('SocketContext: Badge update event dispatched');
+            
+            // Method 6: Additional badge update after delay
+            setTimeout(() => {
+              notificationService.setBadgeCount(unreadCount);
+              console.log('SocketContext: Delayed badge update');
+            }, 500);
             
           } catch (error) {
             console.error('SocketContext: Error setting badge:', error);

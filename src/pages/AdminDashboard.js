@@ -180,10 +180,43 @@ const AdminDashboard = () => {
         // Use notification service for sound and badge
         notificationService.playNotificationSound();
         
-        // Set badge count (WhatsApp-like)
+        // Set badge count (WhatsApp-like) - Aggressive badge update for admin
         const unreadCount = event.detail.unreadCount || 1;
-        notificationService.setBadgeCount(unreadCount);
-        console.log('Admin badge count set to:', unreadCount);
+        console.log('AdminDashboard: Real-time notification - Setting badge count to:', unreadCount);
+        
+        // Aggressive badge update for admin notifications
+        try {
+          // Method 1: Standard badge setting
+          notificationService.setBadgeCount(unreadCount);
+          console.log('AdminDashboard: Standard badge set');
+          
+          // Method 2: Mobile badge fallback
+          notificationService.setMobileBadgeFallback(unreadCount);
+          console.log('AdminDashboard: Mobile badge fallback set');
+          
+          // Method 3: Force mobile badge for installed PWA
+          notificationService.setMobileAppIconBadge(unreadCount);
+          console.log('AdminDashboard: Mobile app icon badge set');
+          
+          // Method 4: Force badge for PWA
+          notificationService.forceMobileBadge(unreadCount);
+          console.log('AdminDashboard: Force mobile badge set');
+          
+          // Method 5: Dispatch badge update event
+          window.dispatchEvent(new CustomEvent('badge-update', { 
+            detail: { count: unreadCount } 
+          }));
+          console.log('AdminDashboard: Badge update event dispatched');
+          
+          // Method 6: Additional badge update after delay
+          setTimeout(() => {
+            notificationService.setBadgeCount(unreadCount);
+            console.log('AdminDashboard: Delayed badge update');
+          }, 500);
+          
+        } catch (error) {
+          console.error('AdminDashboard: Error setting badge:', error);
+        }
       }
       
       // Show new notification alert
