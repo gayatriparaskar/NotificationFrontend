@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation } from 'react-query';
 import { ordersAPI } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import { toast } from 'react-toastify';
 import { CreditCard, Truck, Shield, ArrowLeft } from 'lucide-react';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { cartItems, getCartTotal, clearCart } = useCart();
   const [formData, setFormData] = useState({
     shippingAddress: {
       street: user?.address?.street || '',
@@ -30,20 +32,12 @@ const Checkout = () => {
     notes: ''
   });
 
-  const [cartItems] = useState([
-    // Mock cart items - in real app, this would come from context/state
-    {
-      productId: '1',
-      quantity: 1,
-      price: 150
-    }
-  ]);
-
   const createOrderMutation = useMutation(
     (orderData) => ordersAPI.create(orderData),
     {
       onSuccess: (response) => {
         toast.success('Order placed successfully!');
+        clearCart(); // Clear cart after successful order
         navigate('/my-orders');
       },
       onError: (error) => {
@@ -51,6 +45,20 @@ const Checkout = () => {
       }
     }
   );
+
+  // Redirect if cart is empty
+  if (cartItems.length === 0) {
+    navigate('/cart');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your cart is empty</h2>
+          <p className="text-gray-600 mb-4">Redirecting to cart...</p>
+          <div className="spinner"></div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -84,8 +92,22 @@ const Checkout = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Validate cart items have proper product data
+    const invalidItems = cartItems.filter(item => !item.product || !item.product._id);
+    if (invalidItems.length > 0) {
+      toast.error('Some cart items are invalid. Please refresh and try again.');
+      return;
+    }
+    
+    // Format cart items for API
+    const formattedItems = cartItems.map(item => ({
+      productId: item.product._id, // Backend expects 'productId', not 'product'
+      quantity: item.quantity,
+      price: item.product.price
+    }));
+    
     const orderData = {
-      items: cartItems,
+      items: formattedItems,
       shippingAddress: formData.shippingAddress,
       billingAddress: formData.billingAddress.sameAsShipping 
         ? formData.shippingAddress 
@@ -97,7 +119,7 @@ const Checkout = () => {
     createOrderMutation.mutate(orderData);
   };
 
-  const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const subtotal = cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
   const shipping = subtotal > 100 ? 0 : 25;
   const tax = subtotal * 0.08;
   const total = subtotal + shipping + tax;
@@ -373,6 +395,30 @@ const Checkout = () => {
               <h3 className="text-lg font-semibold text-gray-900">Order Summary</h3>
             </div>
             <div className="card-content">
+              {/* Cart Items */}
+              <div className="space-y-3 mb-6">
+                {cartItems.map((item) => (
+                  <div key={item.product._id} className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      <img
+                        src="https://via.placeholder.com/100x100"
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                        {item.product.name}
+                      </h4>
+                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      ${(item.product.price * item.quantity).toFixed(2)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
               <div className="space-y-4">
                 <div className="flex justify-between text-sm">
                   <span>Subtotal</span>

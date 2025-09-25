@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { ordersAPI } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 import { Package, Clock, DollarSign, Eye, X } from 'lucide-react';
 
 const Orders = () => {
+  const { isAuthenticated } = useAuth();
   const [filters, setFilters] = useState({
     status: '',
     page: 1
@@ -13,12 +15,13 @@ const Orders = () => {
     ['orders', filters],
     () => ordersAPI.getAll(filters),
     {
-      keepPreviousData: true
+      keepPreviousData: true,
+      enabled: isAuthenticated // Only fetch if user is authenticated
     }
   );
 
-  const orders = data?.data?.orders || [];
-  const pagination = data?.data?.pagination || {};
+  const orders = data?.data?.data?.orders || [];
+  const pagination = data?.data?.data?.pagination || {};
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
@@ -43,6 +46,15 @@ const Orders = () => {
     return <span className={`badge ${config.class}`}>{config.text}</span>;
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Required</h2>
+        <p className="text-gray-600">Please login to view your orders.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -55,7 +67,10 @@ const Orders = () => {
     return (
       <div className="text-center py-12">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Orders</h2>
-        <p className="text-gray-600">Please try again later.</p>
+        <p className="text-gray-600 mb-4">Please try again later.</p>
+        <p className="text-sm text-red-600">
+          {error.response?.data?.message || error.message || 'Unknown error occurred'}
+        </p>
       </div>
     );
   }
@@ -143,12 +158,8 @@ const Orders = () => {
                     {order.items.map((item, index) => (
                       <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center">
-                          <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden mr-3">
-                            <img
-                              src={item.product?.images?.[0]?.url || 'https://via.placeholder.com/50x50'}
-                              alt={item.product?.name}
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden mr-3 flex items-center justify-center">
+                            <Package className="h-6 w-6 text-gray-400" />
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{item.product?.name}</p>

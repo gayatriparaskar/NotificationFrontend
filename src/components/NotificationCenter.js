@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation } from 'react-query';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { notificationsAPI } from '../utils/api';
+import WhatsAppBadge from './WhatsAppBadge';
 import { Bell, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 
 const NotificationCenter = ({ isOpen, onClose }) => {
   const [filter, setFilter] = useState('all');
+  const queryClient = useQueryClient();
 
-  const { data: notificationsData, refetch } = useQuery(
+  const { data: notificationsData, refetch, error: notificationsError } = useQuery(
     'notifications',
     () => notificationsAPI.getAll({ limit: 50 }),
     {
@@ -27,8 +29,31 @@ const NotificationCenter = ({ isOpen, onClose }) => {
     }
   });
 
-  const notifications = notificationsData?.data?.notifications || [];
+  const notifications = notificationsData?.data?.data?.notifications || [];
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadNotifications = notifications.filter(n => !n.isRead);
+
+  // Debug logging
+  console.log('NotificationCenter data:', notificationsData);
+  console.log('NotificationCenter error:', notificationsError);
+  console.log('NotificationCenter notifications:', notifications);
+  console.log('NotificationCenter unread count:', unreadCount);
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleNewNotification = (event) => {
+      console.log('Real-time notification received in NotificationCenter:', event.detail);
+      // Refetch notifications
+      queryClient.invalidateQueries('notifications');
+      queryClient.invalidateQueries('notification-count');
+    };
+
+    window.addEventListener('new-notification', handleNewNotification);
+    
+    return () => {
+      window.removeEventListener('new-notification', handleNewNotification);
+    };
+  }, [queryClient]);
 
   const filteredNotifications = notifications.filter(notification => {
     if (filter === 'unread') return !notification.isRead;
@@ -74,11 +99,7 @@ const NotificationCenter = ({ isOpen, onClose }) => {
             <div className="flex items-center">
               <Bell className="h-5 w-5 text-gray-600 mr-2" />
               <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-              {unreadCount > 0 && (
-                <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                  {unreadCount}
-                </span>
-              )}
+              <WhatsAppBadge count={unreadCount} className="ml-2" />
             </div>
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
@@ -142,8 +163,8 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                 {filteredNotifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                      !notification.isRead ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
+                      !notification.isRead ? 'bg-blue-50 border-l-4 border-blue-500 shadow-sm' : 'hover:bg-gray-100'
                     }`}
                     onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
                   >
@@ -154,21 +175,26 @@ const NotificationCenter = ({ isOpen, onClose }) => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <p className={`text-sm font-medium ${
-                            !notification.isRead ? 'text-gray-900' : 'text-gray-700'
+                            !notification.isRead ? 'text-gray-900 font-bold' : 'text-gray-700'
                           }`}>
                             {notification.title}
                           </p>
-                          {!notification.isRead && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                          )}
+                          <div className="flex items-center space-x-2">
+                            {!notification.isRead && (
+                              <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 animate-pulse" />
+                            )}
+                            <span className="text-xs text-gray-500">
+                              {new Date(notification.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </span>
+                          </div>
                         </div>
                         <p className={`text-sm mt-1 ${
-                          !notification.isRead ? 'text-gray-800' : 'text-gray-600'
+                          !notification.isRead ? 'text-gray-800 font-medium' : 'text-gray-600'
                         }`}>
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {new Date(notification.createdAt).toLocaleString()}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {new Date(notification.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>

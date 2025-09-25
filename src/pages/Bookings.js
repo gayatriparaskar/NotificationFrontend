@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { bookingsAPI } from '../utils/api';
+import { ordersAPI } from '../utils/api';
 import { Calendar, Clock, User, DollarSign, MoreVertical, Eye, X } from 'lucide-react';
 
 const Bookings = () => {
@@ -10,14 +10,14 @@ const Bookings = () => {
   });
 
   const { data, isLoading, error } = useQuery(
-    ['bookings', filters],
-    () => bookingsAPI.getAll(filters),
+    ['orders', filters],
+    () => ordersAPI.getAll(filters),
     {
       keepPreviousData: true
     }
   );
 
-  const bookings = data?.data?.bookings || [];
+  const orders = data?.data?.orders || [];
   const pagination = data?.data?.pagination || {};
 
   const handleFilterChange = (key, value) => {
@@ -32,9 +32,10 @@ const Bookings = () => {
     const statusConfig = {
       pending: { class: 'badge-warning', text: 'Pending' },
       confirmed: { class: 'badge-success', text: 'Confirmed' },
-      cancelled: { class: 'badge-danger', text: 'Cancelled' },
-      completed: { class: 'badge-primary', text: 'Completed' },
-      no_show: { class: 'badge-danger', text: 'No Show' }
+      processing: { class: 'badge-info', text: 'Processing' },
+      shipped: { class: 'badge-primary', text: 'Shipped' },
+      delivered: { class: 'badge-success', text: 'Delivered' },
+      cancelled: { class: 'badge-danger', text: 'Cancelled' }
     };
 
     const config = statusConfig[status] || { class: 'badge-default', text: status };
@@ -52,7 +53,7 @@ const Bookings = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Bookings</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Orders</h2>
         <p className="text-gray-600">Please try again later.</p>
       </div>
     );
@@ -61,8 +62,8 @@ const Bookings = () => {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">My Bookings</h1>
-        <p className="text-gray-600">Manage and track your appointments</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">My Orders</h1>
+        <p className="text-gray-600">Manage and track your orders</p>
       </div>
 
       {/* Filters */}
@@ -80,51 +81,52 @@ const Bookings = () => {
               <option value="">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="confirmed">Confirmed</option>
-              <option value="completed">Completed</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
-              <option value="no_show">No Show</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Bookings List */}
-      {bookings.length === 0 ? (
+      {/* Orders List */}
+      {orders.length === 0 ? (
         <div className="text-center py-12">
           <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Bookings Found</h3>
-          <p className="text-gray-600 mb-6">You haven't made any bookings yet.</p>
-          <a href="/services" className="btn btn-primary">
-            Browse Services
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Orders Found</h3>
+          <p className="text-gray-600 mb-6">You haven't made any orders yet.</p>
+          <a href="/products" className="btn btn-primary">
+            Browse Products
           </a>
         </div>
       ) : (
         <>
           <div className="space-y-4 mb-8">
-            {bookings.map((booking) => (
-              <div key={booking._id} className="card hover:shadow-lg transition-shadow">
+            {orders.map((order) => (
+              <div key={order._id} className="card hover:shadow-lg transition-shadow">
                 <div className="card-content">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {booking.service?.name}
+                          Order #{order.orderNumber}
                         </h3>
-                        {getStatusBadge(booking.status)}
+                        {getStatusBadge(order.status)}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div className="flex items-center text-sm text-gray-600">
                           <Calendar className="h-4 w-4 mr-2" />
-                          <span>{new Date(booking.bookingDate).toLocaleDateString()}</span>
+                          <span>{new Date(order.createdAt).toLocaleDateString()}</span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <Clock className="h-4 w-4 mr-2" />
-                          <span>{booking.startTime} - {booking.endTime}</span>
+                          <span>{order.items?.length || 0} item(s)</span>
                         </div>
                         <div className="flex items-center text-sm text-gray-600">
                           <User className="h-4 w-4 mr-2" />
-                          <span>{booking.provider?.name}</span>
+                          <span>Total: ${order.totalAmount}</span>
                         </div>
                       </div>
 
@@ -132,7 +134,7 @@ const Bookings = () => {
                         <div className="flex items-center text-sm text-gray-600">
                           <DollarSign className="h-4 w-4 mr-1" />
                           <span className="font-semibold text-gray-900">
-                            ${booking.totalAmount}
+                            ${order.totalAmount}
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">

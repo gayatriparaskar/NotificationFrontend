@@ -50,7 +50,7 @@ export const authAPI = {
 export const productsAPI = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
-  create: (data) => api.post('/products', data),
+  create: (data) => api.post('/products/', data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
   getCategories: () => api.get('/products/categories'),
@@ -62,6 +62,8 @@ export const ordersAPI = {
   getById: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post('/orders', data),
   updateStatus: (id, data) => api.put(`/orders/${id}/status`, data),
+  confirm: (id, data) => api.post(`/orders/${id}/confirm`, data),
+  reject: (id, data) => api.post(`/orders/${id}/reject`, data),
   cancel: (id, data) => api.post(`/orders/${id}/cancel`, data),
   getStats: () => api.get('/orders/stats/overview'),
 };

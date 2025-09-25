@@ -1,46 +1,30 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 import { toast } from 'react-toastify';
 import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft } from 'lucide-react';
 
 const Cart = () => {
   const { isAuthenticated } = useAuth();
-  const [cartItems, setCartItems] = useState([
-    // Mock cart items - in real app, this would come from context/state
-    {
-      id: '1',
-      product: {
-        _id: '1',
-        name: 'Ball Python - Pastel Morph',
-        price: 150,
-        images: [{ url: 'https://via.placeholder.com/100x100' }],
-        stock: 5
-      },
-      quantity: 1
-    }
-  ]);
+  const { cartItems, updateQuantity, removeFromCart, getCartTotal } = useCart();
 
-  const updateQuantity = (itemId, newQuantity) => {
+  const handleUpdateQuantity = (productId, newQuantity) => {
     if (newQuantity <= 0) {
-      removeItem(itemId);
+      handleRemoveItem(productId);
       return;
     }
     
-    setCartItems(items =>
-      items.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    updateQuantity(productId, newQuantity);
   };
 
-  const removeItem = (itemId) => {
-    setCartItems(items => items.filter(item => item.id !== itemId));
+  const handleRemoveItem = (productId) => {
+    removeFromCart(productId);
     toast.success('Item removed from cart');
   };
 
   const getSubtotal = () => {
-    return cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+    return getCartTotal();
   };
 
   const getShipping = () => {
@@ -96,12 +80,12 @@ const Cart = () => {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {cartItems.map((item) => (
-            <div key={item.id} className="card">
+            <div key={item.product._id} className="card">
               <div className="card-content">
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     <img
-                      src={item.product.images[0]?.url || 'https://via.placeholder.com/100x100'}
+                      src="https://via.placeholder.com/100x100"
                       alt={item.product.name}
                       className="w-full h-full object-cover"
                     />
@@ -119,7 +103,7 @@ const Cart = () => {
 
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      onClick={() => handleUpdateQuantity(item.product._id, item.quantity - 1)}
                       className="btn btn-outline btn-sm"
                       disabled={item.quantity <= 1}
                     >
@@ -127,9 +111,9 @@ const Cart = () => {
                     </button>
                     <span className="w-12 text-center font-medium">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => handleUpdateQuantity(item.product._id, item.quantity + 1)}
                       className="btn btn-outline btn-sm"
-                      disabled={item.quantity >= item.product.stock}
+                      disabled={item.quantity >= item.product.quantity}
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -140,7 +124,7 @@ const Cart = () => {
                       ${(item.product.price * item.quantity).toFixed(2)}
                     </div>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveItem(item.product._id)}
                       className="text-red-500 hover:text-red-700 mt-1"
                     >
                       <Trash2 className="h-4 w-4" />

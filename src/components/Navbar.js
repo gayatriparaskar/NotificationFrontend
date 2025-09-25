@@ -1,28 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useQuery } from 'react-query';
+import { useCart } from '../contexts/CartContext';
+import { useQuery, useQueryClient } from 'react-query';
 import { notificationsAPI } from '../utils/api';
 import NotificationCenter from './NotificationCenter';
-import { Menu, X, User, LogOut, Calendar, Settings, Home, Bell } from 'lucide-react';
+import WhatsAppBadge from './WhatsAppBadge';
+import { Menu, X, User, LogOut, Calendar, Settings, Home, Bell, ShoppingCart } from 'lucide-react';
 
 const Navbar = () => {
   const { user, isAuthenticated, logout, isAdmin } = useAuth();
+  const { getCartItemCount } = useCart();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // Get unread notification count
-  const { data: notificationData } = useQuery(
+  const { data: notificationData, error: notificationError } = useQuery(
     'notification-count',
     () => notificationsAPI.getUnreadCount(),
     {
       enabled: isAuthenticated,
-      refetchInterval: 30000 // Refetch every 30 seconds
+      refetchInterval: 5000, // Refetch every 5 seconds
+      staleTime: 0 // Always consider data stale
     }
   );
 
-  const unreadCount = notificationData?.data?.unreadCount || 0;
+  const unreadCount = notificationData?.data?.data?.unreadCount || 0;
+
+  // Debug logging
+  console.log('Navbar notification data:', notificationData);
+  console.log('Navbar notification error:', notificationError);
+  console.log('Navbar unread count:', unreadCount);
+
+  // Listen for real-time notifications
+  useEffect(() => {
+    const handleNewNotification = (event) => {
+      console.log('Real-time notification received in Navbar:', event.detail);
+      // Refetch notification count
+      queryClient.invalidateQueries('notification-count');
+      queryClient.invalidateQueries('notifications');
+    };
+
+    window.addEventListener('new-notification', handleNewNotification);
+    
+    return () => {
+      window.removeEventListener('new-notification', handleNewNotification);
+    };
+  }, [queryClient]);
 
   const handleLogout = () => {
     logout();
@@ -67,31 +93,39 @@ const Navbar = () => {
             
             {isAuthenticated ? (
               <>
-                <button 
-                  onClick={handleDashboardClick}
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  Dashboard
-                </button>
-                <NavLink to="/my-orders">My Orders</NavLink>
-                <NavLink to="/cart">Cart</NavLink>
-                {user?.role === 'admin' && (
-                  <NavLink to="/admin">Admin Panel</NavLink>
-                )}
-                
-                {/* Notifications - Only for customers */}
-                {user?.role === 'customer' && (
-                  <button
-                    onClick={() => setIsNotificationOpen(true)}
-                    className="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                  >
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </button>
+                {/* Role-based navigation */}
+                {user?.role === 'admin' ? (
+                  // Admin navigation
+                  <>
+                    <button 
+                      onClick={handleDashboardClick}
+                      className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                    >
+                      Admin Dashboard
+                    </button>
+                  </>
+                ) : (
+                  // Customer/Service Provider navigation
+                  <>
+                    <NavLink to="/my-orders">My Orders</NavLink>
+                    <Link to="/cart" className="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                      <ShoppingCart className="h-5 w-5" />
+                      {getCartItemCount() > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {getCartItemCount() > 9 ? '9+' : getCartItemCount()}
+                        </span>
+                      )}
+                    </Link>
+                    
+                    {/* Notifications - For all authenticated users */}
+        <button
+          onClick={() => setIsNotificationOpen(true)}
+          className="relative text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors group"
+        >
+          <Bell className="h-5 w-5" />
+          <WhatsAppBadge count={unreadCount} />
+        </button>
+                  </>
                 )}
                 
                 {/* User dropdown */}
@@ -152,39 +186,59 @@ const Navbar = () => {
               
               {isAuthenticated ? (
                 <>
-                  <button 
-                    onClick={handleDashboardClick}
-                    className="flex items-center w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Dashboard
-                  </button>
-                  <NavLink to="/my-orders" onClick={() => setIsMenuOpen(false)}>
-                    My Orders
-                  </NavLink>
-                  <NavLink to="/cart" onClick={() => setIsMenuOpen(false)}>
-                    Cart
-                  </NavLink>
-                  {user?.role === 'admin' && (
-                    <NavLink to="/admin" onClick={() => setIsMenuOpen(false)}>
-                      Admin Panel
-                    </NavLink>
-                  )}
-                  {user?.role === 'customer' && (
-                    <button
-                      onClick={() => {
-                        setIsNotificationOpen(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      <Bell className="h-4 w-4 mr-2" />
-                      Notifications
-                      {unreadCount > 0 && (
-                        <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </button>
+                  {/* Role-based mobile navigation */}
+                  {user?.role === 'admin' ? (
+                    // Admin mobile navigation
+                    <>
+                      <button 
+                        onClick={handleDashboardClick}
+                        className="flex items-center w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        Admin Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsNotificationOpen(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        <Bell className="h-4 w-4 mr-2" />
+                        Notifications
+                        <div className="ml-auto">
+                          <WhatsAppBadge count={unreadCount} className="relative" />
+                        </div>
+                      </button>
+                    </>
+                  ) : (
+                    // Customer/Service Provider mobile navigation
+                    <>
+                      <NavLink to="/my-orders" onClick={() => setIsMenuOpen(false)}>
+                        My Orders
+                      </NavLink>
+                      <Link to="/cart" onClick={() => setIsMenuOpen(false)} className="flex items-center w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Cart
+                        {getCartItemCount() > 0 && (
+                          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                            {getCartItemCount()}
+                          </span>
+                        )}
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsNotificationOpen(true);
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        <Bell className="h-4 w-4 mr-2" />
+                        Notifications
+                        <div className="ml-auto">
+                          <WhatsAppBadge count={unreadCount} className="relative" />
+                        </div>
+                      </button>
+                    </>
                   )}
                   <NavLink to="/profile" onClick={() => setIsMenuOpen(false)}>
                     <Settings className="h-4 w-4 mr-2 inline" />

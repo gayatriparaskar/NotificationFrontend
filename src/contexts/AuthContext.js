@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import pwaService from '../services/pwaService';
 
 const AuthContext = createContext();
 
@@ -51,6 +52,9 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setToken(userToken);
       localStorage.setItem('token', userToken);
+      
+      // Initialize PWA for logged-in user
+      pwaService.initialize(userData._id);
       
       return { success: true, data: userData };
     } catch (error) {

@@ -2,15 +2,18 @@ import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { productsAPI } from '../utils/api';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-toastify';
 import { Search, Star, ShoppingCart, Eye, DollarSign } from 'lucide-react';
 
 const Products = () => {
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const [filters, setFilters] = useState({
     search: '',
-    category: '',
     minPrice: '',
     maxPrice: '',
-    age: '',
     page: 1
   });
 
@@ -34,6 +37,21 @@ const Products = () => {
     setFilters(prev => ({ ...prev, page }));
   };
 
+  const handleAddToCart = (product) => {
+    if (!isAuthenticated) {
+      toast.error('Please login to add items to cart');
+      return;
+    }
+
+    if (product.quantity === 0) {
+      toast.error('This product is out of stock');
+      return;
+    }
+
+    addToCart(product, 1);
+    toast.success(`${product.name} added to cart!`);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -51,8 +69,8 @@ const Products = () => {
     );
   }
 
-  const products = data?.data?.products || [];
-  const pagination = data?.data?.pagination || {};
+  const products = data?.data?.data?.products || [];
+  const pagination = data?.data?.data?.pagination || {};
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -63,7 +81,7 @@ const Products = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Search
@@ -72,32 +90,12 @@ const Products = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search snakes..."
+                placeholder="Search products..."
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="input pl-10"
               />
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
-            </label>
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="input"
-            >
-              <option value="">All Categories</option>
-              <option value="ball_python">Ball Python</option>
-              <option value="corn_snake">Corn Snake</option>
-              <option value="king_snake">King Snake</option>
-              <option value="milk_snake">Milk Snake</option>
-              <option value="boa_constrictor">Boa Constrictor</option>
-              <option value="python">Python</option>
-              <option value="other">Other</option>
-            </select>
           </div>
 
           <div>
@@ -125,30 +123,13 @@ const Products = () => {
               className="input"
             />
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Age
-            </label>
-            <select
-              value={filters.age || ''}
-              onChange={(e) => handleFilterChange('age', e.target.value)}
-              className="input"
-            >
-              <option value="">All Ages</option>
-              <option value="hatchling">Hatchling</option>
-              <option value="juvenile">Juvenile</option>
-              <option value="sub_adult">Sub Adult</option>
-              <option value="adult">Adult</option>
-            </select>
-          </div>
         </div>
       </div>
 
       {/* Products Grid */}
       {products.length === 0 ? (
         <div className="text-center py-12">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Snakes Found</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No Products Found</h3>
           <p className="text-gray-600">Try adjusting your search criteria.</p>
         </div>
       ) : (
@@ -161,46 +142,37 @@ const Products = () => {
                     <h3 className="text-xl font-semibold text-gray-900">
                       {product.name}
                     </h3>
-                    <span className="badge badge-primary">
-                      {product.category.replace('_', ' ')}
-                    </span>
                   </div>
 
                   <p className="text-gray-600 mb-4 line-clamp-3">
                     {product.description}
                   </p>
 
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span className="font-medium">Species:</span>
-                    <span className="ml-1">{product.species}</span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span className="font-medium">Morph:</span>
-                    <span className="ml-1">{product.morph}</span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-gray-500 mb-2">
-                    <span className="font-medium">Age:</span>
-                    <span className="ml-1 capitalize">{product.age}</span>
-                  </div>
-
-                  <div className="flex items-center text-sm text-gray-500 mb-4">
-                    <span className="font-medium">Size:</span>
-                    <span className="ml-1">{product.size.length}" {product.size.unit}</span>
-                    <DollarSign className="h-4 w-4 ml-4 mr-1" />
-                    <span className="font-semibold text-gray-900">${product.price}</span>
+                  <div className="space-y-2 mb-4">
+                    {product.offerPrice && product.offerPrice < product.price ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-primary-600">
+                          ${product.offerPrice}
+                        </span>
+                        <span className="text-lg text-gray-500 line-through">
+                          ${product.price}
+                        </span>
+                        <span className="badge badge-success">
+                          {Math.round(((product.price - product.offerPrice) / product.price) * 100)}% OFF
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="text-2xl font-bold text-primary-600">
+                        ${product.price}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
-                      <span className={`badge ${product.stock > 0 ? 'badge-success' : 'badge-danger'}`}>
-                        {product.stock > 0 ? `In Stock (${product.stock})` : 'Out of Stock'}
+                      <span className={`badge ${product.quantity > 0 ? 'badge-success' : 'badge-danger'}`}>
+                        {product.quantity > 0 ? `In Stock (${product.quantity})` : 'Out of Stock'}
                       </span>
-                    </div>
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-sm text-gray-600">4.8</span>
                     </div>
                   </div>
 
@@ -212,13 +184,14 @@ const Products = () => {
                       <Eye className="h-4 w-4 mr-1" />
                       View Details
                     </Link>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      disabled={product.stock === 0}
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-1" />
-                      Add to Cart
-                    </button>
+                        <button
+                          onClick={() => handleAddToCart(product)}
+                          className="btn btn-primary btn-sm"
+                          disabled={product.quantity === 0}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-1" />
+                          Add to Cart
+                        </button>
                   </div>
                 </div>
               </div>

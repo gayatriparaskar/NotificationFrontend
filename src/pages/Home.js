@@ -1,8 +1,76 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, Shield, Star, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Users, Shield, Star, ArrowRight, Download, Smartphone, CheckCircle } from 'lucide-react';
+import pwaService from '../services/pwaService';
 
 const Home = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+
+  useEffect(() => {
+    // Check if app is already installed
+    if (pwaService.isAppInstalled()) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // Listen for the beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e) => {
+      console.log('PWA: Before install prompt triggered on Home page');
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    // Listen for the appinstalled event
+    const handleAppInstalled = () => {
+      console.log('PWA: App was installed from Home page');
+      setIsInstalled(true);
+      setShowInstallButton(false);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      // If no deferred prompt, show manual installation instructions
+      alert('To install this app:\n\n1. Look for the "Add to Home Screen" option in your browser menu\n2. Or use the browser menu (⋮) and select "Install SnakeShop"\n3. On mobile: Tap the share button and "Add to Home Screen"');
+      return;
+    }
+
+    console.log('PWA: Showing install prompt from Home page');
+    deferredPrompt.prompt();
+    
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('PWA: User choice outcome from Home page:', outcome);
+    
+    if (outcome === 'accepted') {
+      console.log('PWA: User accepted the install prompt from Home page');
+    } else {
+      console.log('PWA: User dismissed the install prompt from Home page');
+    }
+    
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
+
+  const handleTestSound = () => {
+    console.log('Testing notification sound...');
+    pwaService.showLocalNotification('Test Notification', {
+      body: 'This is a test notification sound',
+      tag: 'test-notification'
+    });
+  };
+
   const features = [
     {
       icon: <Calendar className="h-8 w-8 text-primary-600" />,
@@ -61,6 +129,24 @@ const Home = () => {
               >
                 Get Started
               </Link>
+              
+              {/* PWA Install Button */}
+              {showInstallButton && !isInstalled && (
+                <button
+                  onClick={handleInstallClick}
+                  className="btn btn-lg bg-green-600 hover:bg-green-700 text-white inline-flex items-center animate-pulse"
+                >
+                  <Download className="mr-2 h-5 w-5" />
+                  Install App
+                </button>
+              )}
+              
+              {isInstalled && (
+                <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg">
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  App Installed
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -137,6 +223,66 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* PWA Install Section */}
+      {!isInstalled && (
+        <section className="py-20 bg-gradient-to-r from-green-600 to-green-800 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <Smartphone className="h-8 w-8" />
+                </div>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Install SnakeShop App
+              </h2>
+              <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+                Get the full SnakeShop experience with our mobile app. 
+                Enjoy offline access, push notifications, and faster loading.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <button
+                  onClick={handleInstallClick}
+                  className="btn btn-lg bg-white text-green-600 hover:bg-gray-100 inline-flex items-center"
+                >
+                  <Download className="mr-2 h-5 w-5" />
+                  {showInstallButton ? 'Install Now' : 'Install App'}
+                </button>
+                
+                {!showInstallButton && (
+                  <div className="text-green-200 text-center">
+                    <p className="text-sm">If install button doesn't work, try:</p>
+                    <p className="text-xs mt-1">Chrome/Edge menu → "Install SnakeShop"</p>
+                    <button
+                      onClick={handleTestSound}
+                      className="mt-2 btn bg-white text-green-600 hover:bg-gray-100 text-sm"
+                    >
+                      Test Notification Sound
+                    </button>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-6 text-green-200">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    <span>Offline Access</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    <span>Push Notifications</span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    <span>Fast Loading</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Testimonials Section */}
       <section className="py-20 bg-white">
