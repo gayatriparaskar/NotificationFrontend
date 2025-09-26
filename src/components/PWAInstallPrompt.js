@@ -72,7 +72,7 @@ const PWAInstallPrompt = () => {
               <div className="flex items-center space-x-2">
                 <Smartphone className="h-6 w-6 text-blue-600" />
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Install SnakeShop App
+                  Installsnacks Shop App
                 </h3>
               </div>
               <button
@@ -85,7 +85,7 @@ const PWAInstallPrompt = () => {
             
             <div className="mb-6">
               <p className="text-gray-600 mb-4 text-center">
-                Install SnakeShop for offline access and push notifications
+                Install Snacks Shop for offline access and push notifications
               </p>
             </div>
 

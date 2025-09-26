@@ -1,7 +1,7 @@
 {
-  "short_name": "SnakeShop",
-  "name": "SnakeShop - Premium Snake Collection",
-  "description": "Premium snake collection with real-time notifications",
+  "short_name": "Snacks Shop",
+  "name": "Snacks Shop - Premium Chips Collection",
+  "description": "Premium chips collection with real-time notifications",
   "icons": [
     {
       "src": "favicon.ico",
@@ -40,7 +40,7 @@
   "background_color": "#ffffff",
   "orientation": "portrait-primary",
   "scope": "/",
-  "id": "snakeshop-pwa",
+  "id": "chipshop-pwa",
   "prefer_related_applications": false,
   "categories": ["shopping", "business"],
   "lang": "en",
@@ -52,7 +52,7 @@
     {
       "name": "View Products",
       "short_name": "Products",
-      "description": "Browse our snake collection",
+      "description": "Browse our chips collection",
       "url": "/products",
       "icons": [
         {

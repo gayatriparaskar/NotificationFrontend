@@ -1,5 +1,5 @@
-// Service Worker for SnakeShop - Offline functionality and push notifications
-const CACHE_NAME = 'snakeshop-v1';
+// Service Worker for ChipShop - Offline functionality and push notifications
+const CACHE_NAME = 'Snacks shop-v1';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -61,8 +61,8 @@ self.addEventListener('push', (event) => {
   console.log('Service Worker: Push received');
   
   let notificationData = {
-    title: 'SnakeShop',
-    body: 'New notification from SnakeShop',
+    title: 'Snacks Shop',
+    body: 'New notification from ChipShop',
     icon: '/logo192.png',
     badge: '/logo192.png',
     vibrate: [200, 100, 200],
@@ -205,7 +205,7 @@ async function setBadgeWithFallback(count) {
     if (count > 0) {
       try {
         // Show a persistent notification to force badge
-        await self.registration.showNotification('SnakeShop', {
+        await self.registration.showNotification('Snacks Shop', {
           body: `${count} new notifications`,
           icon: '/logo192.png',
           badge: '/logo192.png',
@@ -242,7 +242,7 @@ async function setBadgeWithFallback(count) {
     // Method 3: Try silent notification method
     if (count > 0) {
       try {
-        await self.registration.showNotification('SnakeShop', {
+        await self.registration.showNotification('Snacks Shop', {
           body: `${count} new notifications`,
           icon: '/logo192.png',
           badge: '/logo192.png',
