@@ -74,7 +74,7 @@ const Home = () => {
         // Force update the notification service status
         notificationService.isInstalled = true;
         // Show success message
-        alert('🎉 App installed successfully! You can now access SnakeShop from your home screen.');
+        alert('🎉 App installed successfully! You can now access Snacks Shop from your home screen.');
       } else {
         console.log('Home: PWA installation result:', result);
         
@@ -98,17 +98,17 @@ const Home = () => {
     {
       icon: <Calendar className="h-8 w-8 text-primary-600" />,
       title: 'Easy Ordering',
-      description: 'Browse and purchase snakes with our intuitive shopping experience.'
+      description: 'Browse and purchase snacks with our intuitive shopping experience.'
     },
     {
       icon: <Clock className="h-8 w-8 text-primary-600" />,
       title: 'Fast Shipping',
-      description: 'Get your new snake companion delivered safely and quickly.'
+      description: 'Get your new snacks delivered safely and quickly.'
     },
     {
       icon: <Users className="h-8 w-8 text-primary-600" />,
       title: 'Expert Care',
-      description: 'All snakes come with detailed care instructions and health guarantees.'
+      description: 'All snacks come with detailed nutrition information and quality guarantees.'
     },
     {
       icon: <Shield className="h-8 w-8 text-primary-600" />,
@@ -119,7 +119,7 @@ const Home = () => {
 
   const stats = [
     { label: 'Happy Customers', value: '5,000+' },
-    { label: 'Snakes Available', value: '200+' },
+    { label: 'Snacks Available', value: '200+' },
     { label: 'Species', value: '15+' },
     { label: 'Average Rating', value: '4.9/5' }
   ];
@@ -132,7 +132,7 @@ const Home = () => {
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Find Your Perfect
-              <span className="block text-primary-200">Snake Companion</span>
+              <span className="block text-primary-200">Snacks Collection</span>
             </h1>
             
             {/* Mobile Badge Indicator */}
@@ -145,15 +145,15 @@ const Home = () => {
               </div>
             )}
             <p className="text-xl md:text-2xl mb-8 text-primary-100 max-w-3xl mx-auto">
-              Discover and purchase beautiful snakes from our curated collection. 
-              From ball pythons to corn snakes, king snakes to boas - we've got the perfect snake for you.
+              Discover and purchase delicious snacks from our curated collection. 
+              From potato chips to corn chips, tortilla chips to pretzels - we've got the perfect snacks for you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/products"
                 className="btn btn-lg bg-white text-primary-600 hover:bg-gray-100 inline-flex items-center"
               >
-                Browse Snakes
+                Browse Snacks
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <Link
@@ -188,11 +188,11 @@ const Home = () => {
                           const isIOS = userAgent.includes('iphone') || userAgent.includes('ipad');
                           
                           if (isIOS) {
-                            return 'Add SnakeShop to Home Screen (iOS)';
+                            return 'Add Snacks Shop to Home Screen (iOS)';
                           } else if (isMobile) {
-                            return 'Install SnakeShop App (Mobile)';
+                            return 'Install Snacks Shop App (Mobile)';
                           } else {
-                            return 'Install SnakeShop App';
+                            return 'Install Snacks Shop App';
                           }
                         })()}
                       </span>
@@ -259,10 +259,10 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose Our Snake Collection?
+              Why Choose Our Snacks Collection?
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              We make finding and purchasing your perfect snake simple, secure, and convenient.
+              We make finding and purchasing your perfect snacks simple, secure, and convenient.
             </p>
           </div>
 
@@ -288,10 +288,10 @@ const Home = () => {
       <section className="py-20 bg-primary-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Ready to Find Your Snake?
+              Ready to Find Your Snacks?
             </h2>
             <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of satisfied customers who trust us with their snake companions.
+              Join thousands of satisfied customers who trust us with their snacks.
             </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -304,7 +304,7 @@ const Home = () => {
               to="/products"
               className="btn btn-lg btn-outline border-white text-white hover:bg-white hover:text-primary-600"
             >
-              View Snakes
+              View Snacks
             </Link>
           </div>
         </div>

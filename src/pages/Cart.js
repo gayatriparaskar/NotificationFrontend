@@ -58,7 +58,7 @@ const Cart = () => {
       <div className="max-w-4xl mx-auto text-center py-12">
         <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Cart is Empty</h2>
-        <p className="text-gray-600 mb-6">Add some beautiful snakes to your cart!</p>
+        <p className="text-gray-600 mb-6">Add some delicious snacks to your cart!</p>
         <Link to="/products" className="btn btn-primary">
           Browse Products
         </Link>

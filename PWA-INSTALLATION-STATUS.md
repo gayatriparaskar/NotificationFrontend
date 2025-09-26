@@ -185,7 +185,7 @@ After installation, users should see:
 
 ## 🎉 **PWA Installation Complete!**
 
-**SnakeShop is now a fully functional PWA** that can be installed on both Android and iOS devices with all modern PWA features working correctly!
+**Snacks Shop is now a fully functional PWA** that can be installed on both Android and iOS devices with all modern PWA features working correctly!
 
 ### **Next Steps:**
 1. **Deploy** the app to production

@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * PWA Testing Script for SnakeShop
+ * PWA Testing Script for Snacks Shop
  * Tests PWA installation capabilities on Android and iOS
  */
 
 const fs = require('fs');
 const path = require('path');
 
-console.log('🍟 ChipShop PWA Testing Script');
+console.log('🍟 Snacks Shop PWA Testing Script');
 console.log('================================\n');
 
 // Initialize score variables
@@ -172,4 +172,4 @@ console.log('2. Open http://localhost:3000 in your browser');
 console.log('3. Test installation on Android (Chrome) and iOS (Safari)');
 console.log('4. Check the PWA-TESTING-GUIDE.md for detailed instructions');
 
-console.log('\n🍟 ChipShop PWA Testing Complete!');
+console.log('\n🍟 Snacks Shop PWA Testing Complete!');

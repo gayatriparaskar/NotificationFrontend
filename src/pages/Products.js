@@ -75,8 +75,8 @@ const Products = () => {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Our Snake Collection</h1>
-        <p className="text-gray-600">Discover and purchase beautiful snakes from our collection</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Our Snacks Collection</h1>
+        <p className="text-gray-600">Discover and purchase delicious snacks from our collection</p>
       </div>
 
       {/* Filters */}

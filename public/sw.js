@@ -1,5 +1,5 @@
-// Service Worker for ChipShop - Offline functionality and push notifications
-const CACHE_NAME = 'Snacks shop-v1';
+// Service Worker for Snacks Shop - Offline functionality and push notifications
+const CACHE_NAME = 'snacks-shop-v1';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -176,6 +176,67 @@ self.addEventListener('message', (event) => {
       setBadgeWithFallback(count);
     }
   }
+});
+
+// Handle badge updates from push notifications
+self.addEventListener('push', (event) => {
+  console.log('Service Worker: Push received');
+  
+  let notificationData = {
+    title: 'Snacks Shop',
+    body: 'New notification from Snacks Shop',
+    icon: '/logo192.png',
+    badge: '/logo192.png',
+    vibrate: [200, 100, 200],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'View Details',
+        icon: '/logo192.png'
+      },
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/logo192.png'
+      }
+    ]
+  };
+  
+  // Parse push data if available
+  if (event.data) {
+    try {
+      const pushData = event.data.json();
+      console.log('Service Worker: Push data received:', pushData);
+      
+      if (pushData.title) notificationData.title = pushData.title;
+      if (pushData.body) notificationData.body = pushData.body;
+      if (pushData.icon) notificationData.icon = pushData.icon;
+      if (pushData.badge) notificationData.badge = pushData.badge;
+      if (pushData.data) notificationData.data = { ...notificationData.data, ...pushData.data };
+      
+      // Set badge count if provided
+      if (pushData.badgeCount) {
+        notificationData.data.badgeCount = pushData.badgeCount;
+        // Try to set badge immediately
+        if ('setAppBadge' in navigator) {
+          navigator.setAppBadge(pushData.badgeCount).catch(err => 
+            console.log('Service Worker: Could not set badge:', err)
+          );
+        }
+      }
+    } catch (error) {
+      console.log('Service Worker: Could not parse push data, using text:', error);
+      notificationData.body = event.data.text();
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, notificationData)
+  );
 });
 
 // Enhanced badge setting with mobile fallbacks

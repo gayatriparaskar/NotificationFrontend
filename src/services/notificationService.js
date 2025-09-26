@@ -110,10 +110,10 @@ class NotificationService {
       }
       
       const notificationOptions = {
-        body: options.body || 'New notification from SnakeShop',
+        body: options.body || 'New notification from Snacks Shop',
         icon: options.icon || '/logo192.png',
         badge: options.badge || '/logo192.png',
-        tag: options.tag || 'snakeshop-notification',
+        tag: options.tag || 'snacks-shop-notification',
         requireInteraction: options.requireInteraction || false,
         data: {
           url: options.url || '/',
@@ -452,7 +452,7 @@ class NotificationService {
         // Method 2: Show persistent notification for badge
         if (count > 0 && Notification.permission === 'granted') {
           try {
-            const notification = new Notification('SnakeShop', {
+            const notification = new Notification('Snacks Shop', {
               body: `${count} new notifications`,
               icon: '/logo192.png',
               badge: '/logo192.png',
@@ -483,7 +483,7 @@ class NotificationService {
     try {
       if (Notification.permission === 'granted') {
         // Show a very brief notification to trigger badge
-        const notification = new Notification('SnakeShop', {
+        const notification = new Notification('Snacks Shop', {
           body: `${count} new notifications`,
           icon: '/logo192.png',
           badge: '/logo192.png',
@@ -519,7 +519,7 @@ class NotificationService {
 
   // Update document title with badge count
   updateDocumentTitle(count) {
-    const originalTitle = 'SnakeShop - Premium Snake Collection';
+    const originalTitle = 'Snacks Shop - Premium Snacks Collection';
     if (count > 0) {
       document.title = `(${count}) ${originalTitle}`;
     } else {

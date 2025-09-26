@@ -81,14 +81,14 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
               <Calendar className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">SnakeShop</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">Snacks Shop</span>
             </Link>
           </div>
 
           {/* Desktop menu */}
           <div className="hidden md:flex items-center space-x-4">
             <NavLink to="/">Home</NavLink>
-            <NavLink to="/products">Snakes</NavLink>
+            <NavLink to="/products">Snacks</NavLink>
             
             {isAuthenticated ? (
               <>
@@ -184,7 +184,7 @@ const Navbar = () => {
                 Home
               </NavLink>
               <NavLink to="/products" onClick={() => setIsMenuOpen(false)}>
-                Snakes
+                Snacks
               </NavLink>
               
               {isAuthenticated ? (

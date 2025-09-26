@@ -88,7 +88,7 @@ const ServiceDetail = () => {
                   <div className="text-3xl font-bold text-primary-600">
                     ${product.price}
                   </div>
-                  <div className="text-sm text-gray-500">per snake</div>
+                  <div className="text-sm text-gray-500">per snack</div>
                 </div>
               </div>
 

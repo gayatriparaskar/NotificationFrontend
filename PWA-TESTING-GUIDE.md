@@ -238,4 +238,4 @@ npm start
 
 ## 🎉 **PWA Installation Complete!**
 
-Your SnakeShop app is now a fully functional PWA that can be installed on both Android and iOS devices with all modern PWA features working correctly!
+Your Snacks Shop app is now a fully functional PWA that can be installed on both Android and iOS devices with all modern PWA features working correctly!

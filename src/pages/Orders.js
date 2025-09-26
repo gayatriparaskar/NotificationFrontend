@@ -79,7 +79,7 @@ const Orders = () => {
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">My Orders</h1>
-        <p className="text-gray-600">Track and manage your snake orders</p>
+        <p className="text-gray-600">Track and manage your snacks orders</p>
       </div>
 
       {/* Filters */}
