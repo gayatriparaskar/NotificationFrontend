@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import notificationService from '../services/notificationService';
+import { toast } from 'react-toastify';
 
 const SocketContext = createContext();
 
@@ -16,6 +17,7 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -23,15 +25,26 @@ export const SocketProvider = ({ children }) => {
       // Connect to Socket.IO server
       const socketUrl = process.env.REACT_APP_SOCKET_URL || 'https://notificationbackend-35f6.onrender.com';
       const newSocket = io(socketUrl, {
-        transports: ['websocket', 'polling']
+        transports: ['websocket', 'polling'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000
       });
 
       newSocket.on('connect', () => {
         console.log('Socket connected:', newSocket.id);
         setIsConnected(true);
         
-        // Join user-specific room
+        // Register user with the new system
+        newSocket.emit('register', user._id);
+        
+        // Also join user-specific room for legacy support
         newSocket.emit('join-user-room', user._id);
+      });
+
+      newSocket.on('registered', (data) => {
+        console.log('User registered successfully:', data);
       });
 
       newSocket.on('disconnect', () => {
@@ -39,8 +52,47 @@ export const SocketProvider = ({ children }) => {
         setIsConnected(false);
       });
 
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+        setIsConnected(false);
+      });
+
+      // Handle new simplified notification format
+      newSocket.on('notification', (notificationData) => {
+        console.log('Real-time notification received:', notificationData);
+        
+        // Add to notifications list
+        setNotifications(prev => [notificationData, ...prev]);
+        
+        // Show toast notification
+        toast.success(notificationData.message, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        
+        // Play notification sound
+        notificationService.playNotificationSound();
+        
+        // Show browser notification if permission granted
+        if (Notification.permission === 'granted') {
+          new Notification(notificationData.title, {
+            body: notificationData.message,
+            icon: '/logo192.png',
+            tag: notificationData.id
+          });
+        }
+        
+        // Trigger a refetch of notifications
+        window.dispatchEvent(new CustomEvent('new-notification', { detail: notificationData }));
+      });
+
+      // Handle legacy notification format
       newSocket.on('new-notification', (data) => {
-        console.log('Real-time notification received:', data);
+        console.log('Legacy notification received:', data);
         console.log('Notification type:', data.notification?.type);
         console.log('Notification title:', data.notification?.title);
         console.log('Unread count from server:', data.unreadCount);
@@ -84,6 +136,12 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new CustomEvent('new-notification', { detail: data }));
       });
 
+      // Test connection handler
+      newSocket.on('test-connection-response', (data) => {
+        console.log('Test connection response:', data);
+        toast.info('Socket connection test successful!');
+      });
+
       setSocket(newSocket);
 
       return () => {
@@ -93,7 +151,7 @@ export const SocketProvider = ({ children }) => {
   }, [isAuthenticated, user]);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    <SocketContext.Provider value={{ socket, isConnected, notifications }}>
       {children}
     </SocketContext.Provider>
   );
